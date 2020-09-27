@@ -5,11 +5,10 @@ import com.sun.net.httpserver.HttpHandler
 import com.sun.net.httpserver.HttpServer
 import iris.json.JsonItem
 import iris.json.flow.JsonFlowParser
-
 import java.net.InetSocketAddress
-import java.util.Date
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
+import java.util.logging.Logger
 
 /**
  * @created 08.02.2020
@@ -43,7 +42,8 @@ class VkMultibotCallbackEngine(
 	}
 
 	companion object {
-		private const val DEBUG = false
+		private val logger = Logger.getLogger("iris.vk")
+		var loggingExpired = false
 	}
 
 	private val queue: ArrayBlockingQueue<JsonItem> = ArrayBlockingQueue(1000)
@@ -56,8 +56,7 @@ class VkMultibotCallbackEngine(
 		server.executor = Executors.newFixedThreadPool(20)
 		server.createContext(path, CallbackHandler())
 		server.start()
-		if (DEBUG)
-			println("CALLBACK SERVER STARTED. PORT: $port")
+		logger.fine {"CALLBACK SERVER STARTED. PORT: $port" }
 	}
 
 	override fun retrieve(wait: Boolean): Array<JsonItem> {
@@ -65,10 +64,7 @@ class VkMultibotCallbackEngine(
 			do {
 				if (queue.size != 0) {
 					val res = queue.toTypedArray()
-					if (DEBUG)
-						println("Sending ${queue.size}")
 					queue.clear()
-
 					return res
 				}
 				if (!wait)
@@ -88,8 +84,7 @@ class VkMultibotCallbackEngine(
 			val host = fwd ?: request.remoteAddress.address.hostAddress
 
 			if (addressTester?.isGoodAddress(host) == false) {
-				if (DEBUG)
-					println("Bad test address: $host")
+				logger.info {"Bad request address: $host" }
 				writeResponse(request, "ok")
 				return
 			}
@@ -98,7 +93,7 @@ class VkMultibotCallbackEngine(
 				if (queryKeyTest != null) {
 					val requestGroupCode = queryKeyTest.matchEntire(request.requestURI.path)?.groupValues?.get(1)
 					if (requestGroupCode == null) {
-						println("Bad request query: " + request.requestURI.path)
+						logger.info {"Bad request query: " + request.requestURI.path }
 						writeResponse(request, "ok")
 						return
 					}
@@ -125,20 +120,20 @@ class VkMultibotCallbackEngine(
 
 				groupId = event["group_id"].asInt()
 				if (groupId != groupbot.id) {
-					println("Group ID from code is not identical with response object: obj=" + groupId + " vs gb=" + groupbot.id)
+					logger.warning {"Group ID from code is not identical with response object: obj=" + groupId + " vs gb=" + groupbot.id }
 					writeResponse(request, "ok")
 					return
 				}
 
 				if (event["type"].equals("confirmation")) {
 					val res = groupbot.confirmation
-					println("Test confirmation. Group ID: vk.com/club$groupId")
+					logger.fine {"Test confirmation. Group ID: $groupId" }
 					writeResponse(request, res)
 					return
 				}
 
 				if (groupbot.secret != event["secret"].asString()) {
-					println("Secret is wrong: group id ${groupbot.id}")
+					logger.warning {"Secret is wrong: group id ${groupbot.id}" }
 					writeResponse(request, "ok")
 					return
 				}
@@ -157,7 +152,7 @@ class VkMultibotCallbackEngine(
 						else -> return
 					}
 				} catch (e: Exception) {
-					println(body + "\n" + event)
+					logger.severe { e.stackTraceToString() }
 					return
 				}
 				val suitsTime = if (testDate) {
@@ -172,22 +167,22 @@ class VkMultibotCallbackEngine(
 						queue.offer(event)
 						queueWait.notify()
 					}
-					if (DEBUG) {
+					if (loggingExpired) {
 						synchronized(exp) {
 							expired = 0
 						}
 					}
 				} else {
-					if (DEBUG) {
+					if (loggingExpired) {
 						synchronized(exp) {
 							expired++
 						}
 						if (expired % 50 == 0L)
-							print("Expired " + Date() + " " + expired)
+							logger.info { "Expired $expired" }
 					}
 				}
 			} catch (e: Exception) {
-				e.printStackTrace()
+				logger.severe { e.stackTraceToString() }
 				writeResponse(request, "ok")
 			}
 

@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package iris.vk
 
 import iris.json.JsonEncoder

@@ -3,7 +3,6 @@ package iris.vk
 import iris.vk.VkApiConnection.VkApiConnectResponse
 import java.io.File
 import java.io.IOException
-import java.lang.IllegalArgumentException
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -20,7 +19,7 @@ import java.time.Duration
  */
 class VkApiConnectionHttpClient(client: HttpClient? = null) : VkApiConnection {
 
-	val client: HttpClient = client?: HttpClient.newBuilder()
+	private val client: HttpClient = client?: HttpClient.newBuilder()
 		.version(HttpClient.Version.HTTP_1_1)
 		.followRedirects(HttpClient.Redirect.NEVER)
 		.connectTimeout(Duration.ofSeconds(5))
@@ -37,7 +36,7 @@ class VkApiConnectionHttpClient(client: HttpClient? = null) : VkApiConnection {
 		if (data != null)
 			builder = builder.POST(HttpRequest.BodyPublishers.ofString(data))
 		val request = builder.build()
-		var tries = 3
+		val tries = 3
 		for (i in 1..tries) {
 			try {
 				val response = client.send(request, BodyHandlers.ofString())

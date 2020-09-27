@@ -1,6 +1,5 @@
 package iris.vk.test
 
-import iris.vk.VkApi
 import iris.vk.VkApiFuture
 import java.io.File
 import java.io.Reader

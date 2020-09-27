@@ -2,7 +2,6 @@ package iris.vk
 
 import iris.vk.VkApiConnection.VkApiConnectResponse
 import java.io.File
-import java.lang.IllegalArgumentException
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -13,6 +12,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+
 /**
  * @created 25.10.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)

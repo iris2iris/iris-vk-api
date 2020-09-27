@@ -5,6 +5,7 @@ import iris.json.JsonItem
 import iris.json.JsonObject
 import iris.json.proxy.JsonProxyObject
 import iris.vk.VkApi.LongPollSettings
+import java.util.logging.Logger
 
 /**
  * @created 08.09.2019
@@ -15,19 +16,23 @@ import iris.vk.VkApi.LongPollSettings
 open class VkEngine(val vkApi: VkApi, val eventHandler: VkHandler) {
 
 	var workStatus = true
-	var nullSleeper = 2
+	companion object {
+		val logger = Logger.getLogger("iris.vk")!!
+	}
 
 	fun run() {
 
 		var longPoll = this.getLongPollServer()
 		if (longPoll == null) {
-			println("FAIL AUTH")
+			logger.warning("FAIL AUTH")
 			return
 		}
 		if (longPoll["response"].isNull()) {
-			println("No start response!")
+			logger.warning("No start response!")
 			return
 		}
+
+		logger.fine("Server received. Starting listening")
 
 		var lastTs = longPoll["response"]["ts"].asString()
 		val accessMode = (2 + 8).toString()
@@ -39,37 +44,35 @@ open class VkEngine(val vkApi: VkApi, val eventHandler: VkHandler) {
 				longPoll = getLongPollServer()
 
 				if (longPoll == null) {
-					println("FAIL AUTH")
+					logger.warning("FAIL AUTH")
 					return
 				}
 
 				if (longPoll["response"].isNull()) {
-					println("NO RESPONSE")
+					logger.warning("NO RESPONSE")
 					return
 				}
 				val response = longPoll["response"]
 				longPollSettings = LongPollSettings(response["server"].asString(), response["key"].asString(), accessMode)
 				lastTs = response["ts"].asString()
 				continue
-			} else
-				nullSleeper = 2
+			}
 
 			if (updates["updates"].isNull()) {
 				if (!updates["failed"].isNull()) {
 					when (updates["failed"].asInt()) {
 						2 -> {
 							// истёк срок ссылки
-							println("Long poll connection expired. Rebuilding")
+							logger.info("Long poll connection expired. Rebuilding")
 							longPoll = getLongPollServer()
 
 							if (longPoll == null) {
-								println("FAIL AUTH")
+								logger.warning("FAIL AUTH")
 								return
 							}
 
 							if (longPoll["response"].isNull()) {
-								println("NO RESPONSE")
-								//var_dump(longPoll)
+								logger.warning("NO RESPONSE")
 								return
 							}
 
@@ -81,16 +84,16 @@ open class VkEngine(val vkApi: VkApi, val eventHandler: VkHandler) {
 							lastTs = longPoll!!["response"]["ts"].asString()
 							continue@loop
 						} 3 -> { // обновляем TS
-							println(updates["error"].asString() + ". Try to rebuild")
+							logger.info { updates["error"].asString() + ". Try to rebuild" }
 							longPoll = getLongPollServer()
 
 							if (longPoll == null) {
-								println("FAIL AUTH")
+								logger.warning("FAIL AUTH")
 								return
 							}
 
 							if (longPoll["response"].isNull()) {
-								println("NO RESPONSE")
+								logger.warning("NO RESPONSE")
 								return
 							}
 
@@ -99,7 +102,7 @@ open class VkEngine(val vkApi: VkApi, val eventHandler: VkHandler) {
 							lastTs = response["ts"].asString()
 							continue@loop
 						} else -> {
-							println("Strange")
+							logger.warning("Как мы здесь оказались???")
 							return
 						}
 					}
@@ -108,13 +111,13 @@ open class VkEngine(val vkApi: VkApi, val eventHandler: VkHandler) {
 					if (updates["error"]["error_msg"].asString() == "User authorization failed: access_token has expired."
 						|| updates["error"]["error_code"].asInt() == VK_BOT_ERROR_WRONG_TOKEN
 					) {
-						println("No token?")
+						logger.warning("Нет токена?")
 						return
 					} else {
 						return
 					}
 				} else {
-					println("YOU ARE HERE. SEEMS SOMETHING WRONG")
+					logger.warning("YOU ARE HERE. SEEMS SOMETHING WRONG")
 					return
 				}
 			}
@@ -267,7 +270,9 @@ open class VkEngine(val vkApi: VkApi, val eventHandler: VkHandler) {
 				if (m[7].isNotNull()) {
 					val attachments = mutableListOf<MutableMap<String, Any?>?>()
 					val m7 = m[7] as JsonObject
-					for ((key, addValue) in m7) {
+					for (el in m7) {
+						val key = el.key
+						val addValue = el.key
 						if (!key.startsWith("attach")) continue
 						val data = key.split("_")
 						val num = data[0].substring("attach".length).toInt() - 1

@@ -1,7 +1,6 @@
 package iris.vk
 
 import iris.json.JsonItem
-import iris.vk.*
 import java.net.URLDecoder
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Future
