@@ -10,7 +10,7 @@
 ##### Прямая ссылка:
 
 - Вы можете скачать [подготовленные релизы](https://github.com/iris2iris/iris-vk-api/releases), чтобы скачать JAR файл напрямую.
-- Также вам необходимо скачать [Iris JSON Parser](https://github.com/iris2iris/iris-json-parser-kotlin/releases)
+- Также вам необходимо скачать зависимость — JAR файл [Iris JSON Parser](https://github.com/iris2iris/iris-vk-api/releases/download/v0.1/iris-json-parser.jar)
 
 ## Как это использовать
 
@@ -87,4 +87,8 @@ exitProcess(0)
 
 Все приведённые выше примеры доступны в пакете [iris.vk.test](https://github.com/iris2iris/iris-vk-api/blob/master/src/iris/vk/test)
 
-## Не забывайте поставить звёзды, если этот инструмент оказался вам полезен ⭐
+## Дополнительная информация
+
+**[Iris VK API](https://github.com/iris2iris/iris-vk-api)** использует библиотеку **[Iris JSON Parser](https://github.com/iris2iris/iris-json-parser-kotlin)** для обработки ответов от сервера VK. Загляните ознакомиться =)
+
+#### Не забывайте поставить звёзды, если этот инструмент оказался вам полезен ⭐
