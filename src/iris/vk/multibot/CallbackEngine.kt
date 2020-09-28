@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpServer
 import iris.json.JsonItem
 import iris.json.flow.JsonFlowParser
 import java.net.InetSocketAddress
+import java.net.URI
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executors
 import java.util.logging.Logger
@@ -15,29 +16,25 @@ import java.util.logging.Logger
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 
-// TODO: Проверить
-class VkMultibotCallbackEngine(
+open class VkMultibotCallbackEngine(
 		private val gbSource: GroupbotSource,
 		private val addressTester: AddressTester? = null,
-		private val port: Int = 8000,
+		private val port: Int = 80,
 		private val path: String = "/callback",
-		private val queryKeyTest: Regex? = null,
 		private val expireEventTime: Long = 25_000L,
 ) : VkMultibotRetrieveEngine {
 
 	interface AddressTester {
-		fun isGoodAddress(address: String): Boolean
+		fun isGoodHost(address: String): Boolean
 	}
 
 	interface GroupbotSource {
-		fun getGroupbot(code: String): Groupbot?
-		fun getGroupbot(): Groupbot?
+		fun getGroupbot(uri: URI): Groupbot?
 
 		class Groupbot(val id: Int, val confirmation: String, val secret: String?)
 
 		class SimpleGroupSource(private val gb: Groupbot) : GroupbotSource {
-			override fun getGroupbot(code: String) = gb
-			override fun getGroupbot() = gb
+			override fun getGroupbot(uri: URI) = gb
 		}
 	}
 
@@ -74,44 +71,41 @@ class VkMultibotCallbackEngine(
 		}
 	}
 
+	protected fun getHost(request: HttpExchange): String {
+		val fwd = request.requestHeaders.getFirst("X-Real-IP")
+		val host = fwd ?: request.remoteAddress.address.hostAddress
+		return host
+	}
+
 	inner class CallbackHandler : HttpHandler {
 
 		private var expired: Long = 0
 		private val exp = Any()
 
 		override fun handle(request: HttpExchange) {
-			val fwd = request.requestHeaders.getFirst("X-Real-IP")
-			val host = fwd ?: request.remoteAddress.address.hostAddress
+			logger.finest("Callback API event")
 
-			if (addressTester?.isGoodAddress(host) == false) {
-				logger.info {"Bad request address: $host" }
-				writeResponse(request, "ok")
-				return
-			}
-
-			val groupbot =
-				if (queryKeyTest != null) {
-					val requestGroupCode = queryKeyTest.matchEntire(request.requestURI.path)?.groupValues?.get(1)
-					if (requestGroupCode == null) {
-						logger.info {"Bad request query: " + request.requestURI.path }
-						writeResponse(request, "ok")
-						return
-					}
-
-					gbSource.getGroupbot(requestGroupCode)
-
-				} else
-					gbSource.getGroupbot()
-
-				if (groupbot == null) {
+			if (addressTester != null) {
+				val host = getHost(request)
+				if (!addressTester.isGoodHost(host)) {
+					logger.info {"Bad request address: $host" }
 					writeResponse(request, "ok")
 					return
 				}
+			}
+
+			val groupbot = gbSource.getGroupbot(request.requestURI)
+			if (groupbot == null) {
+				logger.info {"Groupbot not found. " + request.requestURI }
+				writeResponse(request, "ok")
+				return
+			}
 
 			val body = getBody(request)
 
 			try {
 				if (body.isEmpty()) {
+					logger.fine {"Body was empty" }
 					writeResponse(request, "ok")
 					return
 				}
@@ -132,14 +126,15 @@ class VkMultibotCallbackEngine(
 					return
 				}
 
-				if (groupbot.secret != event["secret"].asString()) {
-					logger.warning {"Secret is wrong: group id ${groupbot.id}" }
+				if (!groupbot.secret.isNullOrEmpty() && groupbot.secret != event["secret"].asStringOrNull()) {
+					logger.info {"Secret is wrong: group id ${groupbot.id}" }
 					writeResponse(request, "ok")
 					return
 				}
 
 				writeResponse(request, "ok")
-				event["groupbot"] = groupbot
+				//event["groupbot"] = groupbot
+				//event["groupbot"] = groupbot
 				var testDate = true
 				val obj = try {
 					when (event["type"].asString()) {
