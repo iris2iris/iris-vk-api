@@ -3,9 +3,6 @@ package iris.vk.test
 import iris.vk.Options
 import iris.vk.VkApiPack
 import iris.vk.VkRequestData
-import java.io.File
-import java.io.Reader
-import java.util.*
 import kotlin.system.exitProcess
 
 /**
@@ -13,10 +10,7 @@ import kotlin.system.exitProcess
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 fun main() {
-	val reader: Reader
-	val props = Properties()
-	props.load(File("conf.properties").reader().also { reader = it })
-	reader.close()
+	val props = TestUtil.getProperties()
 	val token = props.getProperty("group.token")
 	val userToId = props.getProperty("userTo.id").toInt()
 

@@ -4,9 +4,6 @@ import iris.vk.VkApiPack
 import iris.vk.VkEngineGroup
 import iris.vk.VkHandlerAdapter
 import iris.vk.VkMessage
-import java.io.File
-import java.io.Reader
-import java.util.*
 import java.util.logging.LogManager
 import java.util.logging.Logger
 import kotlin.system.exitProcess
@@ -19,10 +16,7 @@ import kotlin.system.exitProcess
 class T
 
 fun main() {
-	val reader: Reader
-	val props = Properties()
-	props.load(File("conf.properties").reader().also { reader = it })
-	reader.close()
+	val props = TestUtil.getProperties()
 
 	val ist = T::javaClass.javaClass.getResourceAsStream("logger.properties")
 	LogManager.getLogManager().readConfiguration(ist)
