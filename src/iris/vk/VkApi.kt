@@ -691,28 +691,6 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 		return JsonFlowParser.start(res)
 	}
 
-	open fun generateExecuteCode(data: List<VkRequestData>, token: String? = null): List<VkRequestData> {
-		val sb = StringBuilder()
-		val res = mutableListOf<VkRequestData>()
-
-		for (i in data.indices) {
-			val item = data[i]
-			sb.append("a.push(API.").append(item.method).append('('); JsonEncoder.encode(item.options, sb); sb.append("));")
-			if (((i + 1) % 25) == 0) {
-				val str = "var a = [];" + sb.toString() + "return a;"
-				res.add(VkRequestData("execute", Options("code" to str), token?: this.token, version))
-				sb.clear()
-			}
-		}
-
-		if (sb.isNotEmpty()) {
-			val str = "var a = [];" + sb.toString() + "return a;"
-			res.add(VkRequestData("execute", Options("code" to str), token?: this.token, version))
-		}
-		return res
-	}
-
-
 	open fun utilsGetShortLink(url: String, isPrivate: Boolean = false, token: String? = null): JsonItem? {
 		val options = Options("url" to url, "private" to if (isPrivate) 1 else 0)
 		return request("utils.getShortLink", options, token)
@@ -720,7 +698,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 
 
 	open fun execute(data: List<VkRequestData>, token: String? = null): List<JsonItem> {
-		val codes = this.generateExecuteCode(data, token)
+		val codes = generateExecuteCode(data, token?: this.token, version)
 		val response = mutableListOf<JsonItem>()
 		for (i in codes) {
 			val res = request(i)?: continue
@@ -817,6 +795,26 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 				}
 			}
 			return result
+		}
+
+		fun generateExecuteCode(data: List<VkRequestData>, token: String, version: String): List<VkRequestData> {
+			val sb = StringBuilder()
+			val res = mutableListOf<VkRequestData>()
+
+			for (i in data.indices) {
+				val item = data[i]
+				sb.append("API.").append(item.method).append('('); JsonEncoder.encode(item.options, sb); sb.append("),")
+				if (i != 0 && i % 24 == 0) {
+					val str = "return [" + sb.substring(0, sb.length-1) + "];"
+					res.add(VkRequestData("execute", Options("code" to str), token, version))
+				}
+			}
+
+			if (sb.isNotEmpty()) {
+				val str = "return [" + sb.substring(0, sb.length-1) + "];"
+				res.add(VkRequestData("execute", Options("code" to str), token, version))
+			}
+			return res
 		}
 	}
 }

@@ -691,27 +691,6 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 		return future
 	}
 
-	open fun generateExecuteCode(data: List<VkRequestData>, token: String? = null): List<VkRequestData> {
-		val sb = StringBuilder()
-		val res = mutableListOf<VkRequestData>()
-
-		for (i in data.indices) {
-			val item = data[i]
-			sb.append("a.push(API.").append(item.method).append('('); JsonEncoder.encode(item.options, sb); sb.append("));")
-			if (i != 0 && i % 24 == 0) {
-				val str = "var a = [];" + sb.toString() + "return a;"
-				res.add(VkRequestData("execute", Options("code" to str), token?: this@VkApiFuture.token, version))
-			}
-		}
-
-		if (sb.isNotEmpty()) {
-			val str = "var a = [];" + sb.toString() + "return a;"
-			res.add(VkRequestData("execute", Options("code" to str), token?: this@VkApiFuture.token, version))
-		}
-		return res
-	}
-
-
 	open fun utilsGetShortLink(url: String, isPrivate: Boolean = false, token: String? = null): VkFuture {
 		val options = Options("url" to url, "private" to if (isPrivate) 1 else 0)
 		return request("utils.getShortLink", options, token)
@@ -719,18 +698,13 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 
 
 	open fun execute(data: List<VkRequestData>, token: String? = null): VkFutureList {
-		val codes = this.generateExecuteCode(data, token)
+		val codes = VkApi.generateExecuteCode(data, token?: this.token, version)
 		val futures = mutableListOf<VkFuture>()
 		for (i in codes)
 			futures += request(i)
 
 		return VkExecuteFuture(futures)
 	}
-
-	open fun chat2PeerId(chatId: Int): Int {
-		return 2000000000 + chatId
-	}
-
 
 	class LongPollSettings(var server: String, var key: String, var mode: String) {
 		companion object {
