@@ -1,31 +1,31 @@
 package iris.vk.test
 
-import iris.vk.multibot.VkMultibotCallbackEngine
-import iris.vk.multibot.VkMultibotCallbackEngine.GroupbotSource.Groupbot
-import iris.vk.multibot.VkMultibotCallbackEngine.GroupbotSource.SimpleGroupSource
+import iris.vk.VkEngineGroupCallback
+import iris.vk.VkEngineGroupCallback.GroupbotSource.Groupbot
+import iris.vk.VkEngineGroupCallback.GroupbotSource.SimpleGroupSource
 
 /**
  * @created 28.09.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 fun main() {
+	TestUtil.init()
 	val props = TestUtil.getProperties()
 
-	val token = props.getProperty("group.token")
 	val secret = props.getProperty("group.secret")
 	val confirmation = props.getProperty("group.confirmation")
 	val groupId = props.getProperty("group.id").toInt()
 
-	val cbEngine = VkMultibotCallbackEngine(
-			gbSource = SimpleGroupSource(Groupbot(groupId, confirmation, secret?.ifBlank { null }))
+	val cbEngine = VkEngineGroupCallback(
+			gbSource = SimpleGroupSource(Groupbot(groupId, confirmation, secret))
 			, path = "/kotlin/callback"
-			, port = 80
 	)
-	cbEngine.start()
+	cbEngine.start() // Запускаем сервер. Открываем порт для входящих. Неблокирующий вызов
 
 	while (true) {
-		val items = cbEngine.retrieve(wait = true)
-		for (item in items)
-			println("Событие получено: " + item.obj())
+		val events = cbEngine.retrieve(wait = true) // ожидаем получения хотя бы одного события
+		for (event in events) {
+			println("Событие получено: " + event.obj())
+		}
 	}
 }

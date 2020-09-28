@@ -4,8 +4,6 @@ import iris.vk.VkApiPack
 import iris.vk.VkEngineGroup
 import iris.vk.VkHandlerAdapter
 import iris.vk.VkMessage
-import java.util.logging.LogManager
-import java.util.logging.Logger
 import kotlin.system.exitProcess
 
 /**
@@ -13,16 +11,9 @@ import kotlin.system.exitProcess
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 
-class T
-
 fun main() {
+	TestUtil.init()
 	val props = TestUtil.getProperties()
-
-	val ist = T::javaClass.javaClass.getResourceAsStream("logger.properties")
-	LogManager.getLogManager().readConfiguration(ist)
-	ist.close()
-	val logger = Logger.getLogger("iris.vk")
-
 	val token = props.getProperty("group.token")
 
 	// Создаём класс для отправки сообщений
@@ -37,11 +28,11 @@ fun main() {
 
 			// message.text — это метод, подготавливает текст для дальнейшей работы
 			val text = message.text
-			logger.finest { "Получено сообщение: $text" }
+			println("Получено сообщение: $text")
 
 			val messageItem = message.source["message"]
 			if (text =="пинг") {
-				logger.fine("Команда пинг получена")
+				println("Команда пинг получена")
 
 				// Шлём ответ
 				vk.messages.send(messageItem["from_id"].asInt(), "ПОНГ")

@@ -7,6 +7,7 @@ import iris.vk.VkApiFuture
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 fun main() {
+	TestUtil.init()
 	val props = TestUtil.getProperties()
 	val token = props.getProperty("group.token")
 	val userToId = props.getProperty("userTo.id").toInt()

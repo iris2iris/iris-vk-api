@@ -2,6 +2,7 @@ package iris.vk.test
 
 import java.io.File
 import java.util.*
+import java.util.logging.LogManager
 
 /**
  * @created 28.09.2020
@@ -17,5 +18,15 @@ object TestUtil {
 		props.load(reader)
 		reader.close()
 		return props
+	}
+
+	fun init() {
+		initLogger()
+	}
+
+	private fun initLogger() {
+		val ist = this.javaClass.getResourceAsStream("logger.properties")
+		LogManager.getLogManager().readConfiguration(ist)
+		ist.close()
 	}
 }
