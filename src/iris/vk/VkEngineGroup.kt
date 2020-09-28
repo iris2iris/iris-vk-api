@@ -10,7 +10,7 @@ import iris.vk.VkApi.LongPollSettings
  * @created 08.09.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int = 0): VkEngine(commander, eventHandler) {
+open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int = 0): VkEngineUser(commander, eventHandler) {
 
 	constructor(token: String, messageHandler: VkHandler, version: String? = null) : this(VkApi(token, version?: VK_API_VERSION), messageHandler)
 

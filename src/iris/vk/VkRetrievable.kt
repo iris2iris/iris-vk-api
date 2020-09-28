@@ -1,4 +1,4 @@
-package iris.vk.multibot
+package iris.vk
 
 import iris.json.JsonItem
 
@@ -6,7 +6,7 @@ import iris.json.JsonItem
  * @created 02.12.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-interface VkMultibotRetrieveEngine {
+interface VkRetrievable {
 	fun retrieve(wait: Boolean = true): Array<JsonItem>
 	fun start()
 }

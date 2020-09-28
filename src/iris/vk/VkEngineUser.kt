@@ -13,7 +13,7 @@ import java.util.logging.Logger
  */
 
 // TODO: Проверить
-open class VkEngine(val vkApi: VkApi, val eventHandler: VkHandler) {
+open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 
 	var workStatus = true
 	companion object {

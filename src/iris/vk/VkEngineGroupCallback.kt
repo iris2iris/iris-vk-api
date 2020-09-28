@@ -1,4 +1,4 @@
-package iris.vk.multibot
+package iris.vk
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpHandler
@@ -16,13 +16,13 @@ import java.util.logging.Logger
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 
-open class VkMultibotCallbackEngine(
+open class VkEngineGroupCallback (
 		private val gbSource: GroupbotSource,
 		private val addressTester: AddressTester? = null,
 		private val port: Int = 80,
 		private val path: String = "/callback",
 		private val expireEventTime: Long = 25_000L,
-) : VkMultibotRetrieveEngine {
+) : VkRetrievable {
 
 	interface AddressTester {
 		fun isGoodHost(address: String): Boolean

@@ -57,7 +57,7 @@ println("Завершились")
 exitProcess(0)
 ```
 
-### VkEngineGroup — слушатель входящих событий методом Long Poll
+### VkEngineGroup — слушатель событий методом Long Poll
 
 ```kotlin
 // Создаём класс для отправки сообщений
@@ -83,6 +83,23 @@ val listener = VkEngineGroup(token, simpleMessageHandler)
 listener.run() // блокирует дальнейшее продвижение, пока не будет остановлено
 
 exitProcess(0)
+```
+
+### VkEngineCallback - слушатель событий методом VK Callback API
+
+```kotlin
+val cbEngine = VkEngineGroupCallback(
+        gbSource = SimpleGroupSource(Groupbot(groupId, confirmation, secret))
+        , path = "/kotlin/callback"
+)
+cbEngine.start() // Запускаем сервер. Открываем порт для входящих. Неблокирующий вызов
+
+while (true) {
+    val events = cbEngine.retrieve(wait = true) // ожидаем получения хотя бы одного события
+    for (event in events) {
+        println("Событие получено: " + event.obj())
+    }
+}
 ```
 
 Все приведённые выше примеры доступны в пакете [iris.vk.test](https://github.com/iris2iris/iris-vk-api/blob/master/src/iris/vk/test)
