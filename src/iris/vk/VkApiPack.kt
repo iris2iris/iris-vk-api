@@ -101,7 +101,7 @@ open class VkApiPack(val sender: Sender): VkApiFuture(sender.vkApi.token) {
 
 		class JobData(val request: VkRequestData, val future: VkFuture)
 
-		protected fun processAll(items: Array<JobData>) {
+		private fun processAll(items: Array<JobData>) {
 
 			val tokened = mutableMapOf<String, MutableList<JobData>>()
 			for (data in items) {
@@ -138,7 +138,7 @@ open class VkApiPack(val sender: Sender): VkApiFuture(sender.vkApi.token) {
 								for (i in offset until min(futures.size, offset + 25))
 									futures[i].complete(res)
 							} else {
-								val responses = vkApi.prepareExecuteResponses(res)
+								val responses = VkApi.prepareExecuteResponses(res)
 								for (i in responses.indices) {
 									futures[i + offset].complete(responses[i])
 								}

@@ -5,6 +5,7 @@ package iris.vk
 import iris.json.JsonEncoder
 import iris.json.JsonItem
 import iris.json.flow.JsonFlowParser
+import iris.json.plain.IrisJsonObject
 import iris.json.proxy.JsonProxyObject
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -69,11 +70,11 @@ const val VK_BOT_ERROR_CONTACT_NOT_FOUND = 936
 
 open class VkApi(val token: String, val version: String = VK_API_VERSION, private val connection: VkApiConnection = VkApiConnectionHttpClient()) {
 
-	open val messages = Messages()
-	open val groups = Groups()
-	open val users = Users()
-	open val photos = Photos()
-	open val docs = Docs()
+	val messages = Messages()
+	val groups = Groups()
+	val users = Users()
+	val photos = Photos()
+	val docs = Docs()
 
 	open inner class Messages {
 		open fun sendPm(userId: Int, message: String, options: Options? = null, token: String? = null): JsonItem? {
@@ -251,7 +252,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return Options("method" to "messages.send", "params" to params, "token" to token)
 		}
 
-		fun getConversationMembers(peerId: Int, fields: String? = null, token: String? = null): JsonItem? {
+		open fun getConversationMembers(peerId: Int, fields: String? = null, token: String? = null): JsonItem? {
 			return request("messages.getConversationMembers", "peer_id=" + peerId + (if (fields != null) "&fields=" + encode(fields) else ""), token)
 		}
 
@@ -259,15 +260,15 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return request("messages.getConversationMembers", "peer_id=" + chat2PeerId(chatId) + (if (fields != null) "&fields=" + encode(fields) else ""), token)
 		}
 
-		fun pin(peerId: Int, messageId: Int): JsonItem? {
+		open fun pin(peerId: Int, messageId: Int): JsonItem? {
 			return request("messages.pin", "peer_id=$peerId&message_id=$messageId")
 		}
 
-		fun search(q: String, peerId: Int? = 0, count: Int = 10): JsonItem? {
+		open fun search(q: String, peerId: Int? = 0, count: Int = 10): JsonItem? {
 			return request("messages.search", "q=" + encode(q) + (if (peerId != 0) "&peer_id=$peerId" else "") + (if (count != 0) "&count=$count" else ""))
 		}
 
-		fun messagesDelete(messageIds: List<Int>, deleteForAll: Boolean = false, isSpam: Boolean = false, token: String? = null): JsonItem? {
+		open fun messagesDelete(messageIds: List<Int>, deleteForAll: Boolean = false, isSpam: Boolean = false, token: String? = null): JsonItem? {
 			val options = Options("message_ids" to messageIds.joinToString(","))
 			if (deleteForAll)
 				options["delete_for_all"] = deleteForAll
@@ -277,21 +278,18 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return request("messages.delete", options, token)
 		}
 
-		fun getLongPollServer(): JsonItem? {
+		open fun getLongPollServer(): JsonItem? {
 			return request("messages.getLongPollServer", null as String?)
 		}
 
-		fun getUpdates(lpSettings: LongPollSettings, ts: String): JsonItem? {
-			/*val server = lpSettings.server
-			val key = lpSettings.key
-			val modeRes = lpSettings.mode*/
-			val response = connection.request(lpSettings.getUpdatesLink(ts)/*"https://$server?act=a_check&key=$key&ts=$ts&wait=$wait&mode=$modeRes"*/)
+		open fun getUpdates(lpSettings: LongPollSettings, ts: String): JsonItem? {
+			val response = connection.request(lpSettings.getUpdatesLink(ts))
 			if (response == null || response.code != 200)
 				return null
 			return parser(response.responseText)
 		}
 
-		fun sendMulti(data: Collection<Options>): List<JsonItem> {
+		open fun sendMulti(data: Collection<Options>): List<JsonItem> {
 			val res = mutableListOf<VkRequestData>()
 			for (it in data) {
 				res.add(VkRequestData("messages.send", it))
@@ -300,34 +298,34 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 		}
 	}
 
-	inner class Friends {
-		fun add(userId: Int): JsonItem? {
+	open inner class Friends {
+		open fun add(userId: Int): JsonItem? {
 			return request("friends.add", Options("user_id" to userId))
 		}
 
-		fun getRequests(out: Int = 0, count: Int = 100, token: String? = null): JsonItem? {
+		open fun getRequests(out: Int = 0, count: Int = 100, token: String? = null): JsonItem? {
 			return request("friends.getRequests", Options("need_viewed" to 1, "count" to count, "out" to out), token)
 		}
 
-		fun delete(id: Int, token: String? = null): JsonItem? {
+		open fun delete(id: Int, token: String? = null): JsonItem? {
 			return request("friends.delete", Options("user_id" to id), token)
 		}
 
-		fun get(amount: Int = 1000, token: String? = null): JsonItem? {
+		open fun get(amount: Int = 1000, token: String? = null): JsonItem? {
 			return request("friends.get", Options("count" to amount), token)
 		}
 
-		fun delete(userId: Int): JsonItem? {
+		open fun delete(userId: Int): JsonItem? {
 			return request("friends.delete", "user_id=$userId")
 		}
 	}
 
 	open inner class Groups {
-		fun leave(groupId: Int): JsonItem? {
+		open fun leave(groupId: Int): JsonItem? {
 			return request("groups.leave", Options("group_id" to groupId))
 		}
 
-		fun get(userId: Int? = null, extended: Boolean = false, filter: String? = null, fields: String? = null, offset: Int = 0, count: Int = 0, token: String? = null): JsonItem? {
+		open fun get(userId: Int? = null, extended: Boolean = false, filter: String? = null, fields: String? = null, offset: Int = 0, count: Int = 0, token: String? = null): JsonItem? {
 			val params = Options()
 			if (userId != null)
 				params["user_id"] = userId
@@ -344,55 +342,55 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return request("groups.get", params, token)
 		}
 
-		fun getById(ids: List<String>, fields: String? = null, token: String? = null): JsonItem? {
+		open fun getById(ids: List<String>, fields: String? = null, token: String? = null): JsonItem? {
 			return request("groups.getById", Options("group_ids" to ids.joinToString(","), "fields" to fields), token)
 		}
 
-		fun getLongPollSettings(groupId: Int, token: String? = null): JsonItem? {
+		open fun getLongPollSettings(groupId: Int, token: String? = null): JsonItem? {
 			return request("groups.getLongPollSettings", Options("group_id" to groupId), token)
 		}
 
-		fun setLongPollSettings(groupId: Int, options: Options?, token: String? = null): JsonItem? {
+		open fun setLongPollSettings(groupId: Int, options: Options?, token: String? = null): JsonItem? {
 			val options = options?: Options()
 			options["group_id"] = groupId
 			return request("groups.setLongPollSettings", options, token)
 		}
 
-		fun getLongPollServer(groupId: Int = 0): JsonItem? {
+		open fun getLongPollServer(groupId: Int = 0): JsonItem? {
 			val options = Options()
 			if (groupId != 0)
 				options["group_id"] = groupId
 			return request("groups.getLongPollServer", options)
 		}
 
-		fun getUpdates(lpSettings: LongPollSettings, ts: String): JsonItem? {
+		open fun getUpdates(lpSettings: LongPollSettings, ts: String): JsonItem? {
 			val response = connection.request(lpSettings.getUpdatesLink(ts))
 			if (response == null || response.code != 200)
 				return null
 			return parser(response.responseText)
 		}
 
-		fun getBanned(groupId: Int, token: String? = null): JsonItem? {
+		open fun getBanned(groupId: Int, token: String? = null): JsonItem? {
 			return request("groups.getBanned", Options("group_id" to groupId), token)
 		}
 
-		fun addCallbackServer(groupId: Int, url: String, title: String, secret: String): JsonItem? {
+		open fun addCallbackServer(groupId: Int, url: String, title: String, secret: String): JsonItem? {
 			return request("groups.addCallbackServer", Options("group_id" to groupId, "url" to url, "title" to title, "secret_key" to secret))
 		}
 
-		fun deleteCallbackServer(groupId: Int, serverId: Int): JsonItem? {
+		open fun deleteCallbackServer(groupId: Int, serverId: Int): JsonItem? {
 			return request("groups.deleteCallbackServer", Options("group_id" to groupId, "server_id" to serverId))
 		}
 
-		fun getCallbackConfirmationCode(groupId: Int): JsonItem? {
+		open fun getCallbackConfirmationCode(groupId: Int): JsonItem? {
 			return request("groups.getCallbackConfirmationCode", Options("group_id" to groupId))
 		}
 
-		fun getCallbackSettings(groupId: Int): JsonItem? {
+		open fun getCallbackSettings(groupId: Int): JsonItem? {
 			return request("groups.getCallbackSettings", Options("group_id" to groupId))
 		}
 
-		fun getMembers(groupId: Int, filter: String? = null, offset: String? = null, count: String? = null, token: String? = null): JsonItem? {
+		open fun getMembers(groupId: Int, filter: String? = null, offset: String? = null, count: String? = null, token: String? = null): JsonItem? {
 			val options = Options("group_id" to groupId)
 			if (filter != null)
 				options["filter"] = filter
@@ -404,7 +402,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return request("groups.getMembers", options, token)
 		}
 
-		fun setCallbackSettings(groupId: Int, serverId: Int, options: Options? = null): JsonItem? {
+		open fun setCallbackSettings(groupId: Int, serverId: Int, options: Options? = null): JsonItem? {
 			val params = Options("group_id" to groupId, "server_id" to serverId)
 			if (options != null)
 				params.putAll(options)
@@ -412,47 +410,41 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 
 		}
 
-		fun getCallbackServers(groupId: Int, serverIds: List<Int>? = null): JsonItem? {
+		open fun getCallbackServers(groupId: Int, serverIds: List<Int>? = null): JsonItem? {
 			val options = Options("group_id" to groupId)
 			if (serverIds != null)
 				options["server_ids"] = serverIds.joinToString(",")
 			return request("groups.getCallbackServers", options)
 		}
 
-		fun isMember(idUsers: List<Int>, groupId: Int): JsonItem? {
+		open fun isMember(idUsers: List<Int>, groupId: Int): JsonItem? {
 			return request("groups.isMember", Options("user_ids" to idUsers.joinToString(","), "group_id" to groupId))
 		}
 
-		fun isMember(idUser: Int, groupId: Int): JsonItem? {
+		open fun isMember(idUser: Int, groupId: Int): JsonItem? {
 			return request("groups.isMember", Options("user_id" to idUser, "group_id" to groupId))
 		}
-
-
-
-		/*fun getLongPollServer(groupId: Int): JsonItem? {
-			return request("groups.getLongPollServer", null as String?)
-		}*/
 	}
 
-	inner class Wall {
+	open inner class Wall {
 
-		fun get(ownerId: Int, offset: Int = 0, count: Int = 100): JsonItem? {
+		open fun get(ownerId: Int, offset: Int = 0, count: Int = 100): JsonItem? {
 			return request("wall.get", Options("count" to count, "filter" to "all", "owner_id" to ownerId, "offset" to offset))
 		}
 
-		fun delete(id: Int): JsonItem? {
+		open fun delete(id: Int): JsonItem? {
 			return request("wall.delete", Options("post_id" to id))
 		}
 
-		fun deleteComment(ownerId: Int, commentId: Int, token: String? = null): JsonItem? {
+		open fun deleteComment(ownerId: Int, commentId: Int, token: String? = null): JsonItem? {
 			return request("wall.deleteComment", "owner_id=$ownerId&comment_id=$commentId", token)
 		}
 
-		fun reportComment(ownerId: Int, commentId: Int, reason: Int = 0, token: String? = null): JsonItem? {
+		open fun reportComment(ownerId: Int, commentId: Int, reason: Int = 0, token: String? = null): JsonItem? {
 			return request("wall.reportComment", "owner_id=$ownerId&comment_id=$commentId&reason=$reason", token)
 		}
 
-		fun post(ownerId: Int, message: String?, fromGroup: Boolean = false, options: Options? = null): JsonItem? {
+		open fun post(ownerId: Int, message: String?, fromGroup: Boolean = false, options: Options? = null): JsonItem? {
 			val params = options?: Options()
 			params["owner_id"] = ownerId
 			params["from_group"] = if (fromGroup) "1" else "0"
@@ -462,11 +454,11 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return request("wall.post", params)
 		}
 
-		fun getComments(ownerId: Int, postId: Int, offset: Int = 0, count: Int = 100): JsonItem? {
+		open fun getComments(ownerId: Int, postId: Int, offset: Int = 0, count: Int = 100): JsonItem? {
 			return request("wall.getComments", "owner_id=$ownerId&post_id=$postId&offset=$offset&count=$count")
 		}
 
-		fun createComment(ownerId: Int, postId: Int, text: String?, options: Options? = null, token: String? = null): JsonItem? {
+		open fun createComment(ownerId: Int, postId: Int, text: String?, options: Options? = null, token: String? = null): JsonItem? {
 			val params = options?: Options()
 			params["owner_id"] = ownerId
 			params["post_id"] = postId
@@ -475,7 +467,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return request("wall.createComment", params, token)
 		}
 
-		fun getReposts(ownerId: Int, postId: Int, offset: Int = 0, count: Int = 10, token: String? = null): JsonItem? {
+		open fun getReposts(ownerId: Int, postId: Int, offset: Int = 0, count: Int = 10, token: String? = null): JsonItem? {
 			val options = Options("owner_id" to ownerId, "post_id" to postId)
 			if (offset != 0)
 				options["offset"] = offset
@@ -496,15 +488,15 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 		}
 	}
 
-	inner class Account {
-		fun ban(id: Int): JsonItem? {
+	open inner class Account {
+		open fun ban(id: Int): JsonItem? {
 			return request("account.ban", "owner_id=$id")
 		}
 	}
 
 	open inner class Photos {
 
-		fun uploadMessagePhoto(photoPath: String, token: String? = null): JsonItem? {
+		open fun uploadMessagePhoto(photoPath: String, token: String? = null): JsonItem? {
 			val uploadServerInfo = this.getMessagesUploadServer(token)
 			if (uploadServerInfo == null || isError(uploadServerInfo)) {
 				return uploadServerInfo
@@ -515,7 +507,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return saveMessagesPhotoByObject(responseImage, token)
 		}
 
-		fun uploadMessagePhoto(data: ByteArray, type: String = "png", token: String? = null): JsonItem? {
+		open fun uploadMessagePhoto(data: ByteArray, type: String = "png", token: String? = null): JsonItem? {
 			val uploadServerInfo = this.getMessagesUploadServer(token)
 			if (uploadServerInfo == null || isError(uploadServerInfo)) {
 				return uploadServerInfo
@@ -526,15 +518,15 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return saveMessagesPhotoByObject(Options(responseImage), token)
 		}
 
-		fun saveMessagesPhotoByObject(responseImage: Options, token: String? = null): JsonItem? {
+		open fun saveMessagesPhotoByObject(responseImage: Options, token: String? = null): JsonItem? {
 			return request("photos.saveMessagesPhoto", "photo=" + responseImage["photo"] + "&server=" + responseImage["server"] + "&hash=" + responseImage["hash"], token)
 		}
 
-		fun getMessagesUploadServer(token: String? = null): JsonItem? {
+		open fun getMessagesUploadServer(token: String? = null): JsonItem? {
 			return request("photos.getMessagesUploadServer", null as String?, token)
 		}
 
-		fun uploadWallPhoto(photoPath: String, userId: Int? = null, groupId: Int? = null, token: String? = null): JsonItem? {
+		open fun uploadWallPhoto(photoPath: String, userId: Int? = null, groupId: Int? = null, token: String? = null): JsonItem? {
 			val uploadServerInfo = this.getWallUploadServer(userId, groupId, token)
 			if (uploadServerInfo == null || isError(uploadServerInfo)) {
 				return uploadServerInfo
@@ -546,7 +538,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return saveWallPhotoByObject(Options(responseImage), userId, groupId, token)
 		}
 
-		fun uploadAlbumPhoto(photoPath: String, albumId: Int, groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): JsonItem? {
+		open fun uploadAlbumPhoto(photoPath: String, albumId: Int, groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): JsonItem? {
 			val uploadServerInfo = getUploadServer(albumId, groupId, token) ?: return null
 			if (isError(uploadServerInfo)) {
 				return uploadServerInfo
@@ -558,14 +550,14 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return this.saveByObject(Options(responseImage), albumId, groupId, caption, options, token)
 		}
 
-		fun getUploadServer(albumId: Int, groupId: Int? = null, token: String? = null): JsonItem? {
+		open fun getUploadServer(albumId: Int, groupId: Int? = null, token: String? = null): JsonItem? {
 			val params = Options("album_id" to albumId)
 			if (groupId != null)
 				params["group_id"] = groupId
 			return request("photos.getUploadServer", params, token)
 		}
 
-		fun saveByObject(responseImage: Options, albumId: Int, groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): JsonItem? {
+		open fun saveByObject(responseImage: Options, albumId: Int, groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): JsonItem? {
 			val params = options ?: Options()
 			params["album_id"] = albumId
 			if (groupId != null)
@@ -579,7 +571,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return request("photos.save", params, token)
 		}
 
-		fun getWallUploadServer(userId: Int? = null, groupId: Int? = null, token: String? = null): JsonItem? {
+		open fun getWallUploadServer(userId: Int? = null, groupId: Int? = null, token: String? = null): JsonItem? {
 			val params = Options()
 			if (userId != null)
 				params["user_id"] = userId
@@ -588,7 +580,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return request("photos.getWallUploadServer", params, token)
 		}
 
-		fun saveWallPhotoByObject(responseImage: Options, userId: Int? = null, groupId: Int? = null, token: String? = null): JsonItem? {
+		open fun saveWallPhotoByObject(responseImage: Options, userId: Int? = null, groupId: Int? = null, token: String? = null): JsonItem? {
 			return request(
 				"photos.saveWallPhoto",
 				"user_id=" + userId + "&group_id=" + groupId + "&photo=" + responseImage["photo"] + "&server=" + responseImage["server"] + "&hash=" + responseImage["hash"],
@@ -596,7 +588,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			)
 		}
 
-		fun copy(ownerId: Int, photoId: Int, accessKey: Int? = null, token: String? = null): JsonItem? {
+		open fun copy(ownerId: Int, photoId: Int, accessKey: Int? = null, token: String? = null): JsonItem? {
 			val params = Options("owner_id" to ownerId, "photo_id" to photoId)
 			if (accessKey != null)
 				params["access_key"] = accessKey
@@ -606,7 +598,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 	}
 
 	open inner class Docs {
-		fun upload(filePath: String, peerId: Int, type: String? = null, title: String? = null, tags: String? = null, token: String? = null): JsonItem? {
+		open fun upload(filePath: String, peerId: Int, type: String? = null, title: String? = null, tags: String? = null, token: String? = null): JsonItem? {
 
 			val uploadServerInfo = this.getMessagesUploadServer(peerId, type, token) ?: return null
 			if (isError(uploadServerInfo)) {
@@ -619,7 +611,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return save(responseFile["file"] as String, title, tags, token)
 		}
 
-		fun getMessagesUploadServer(peerId: Int, type: String? = null, token: String? = null): JsonItem? {
+		open fun getMessagesUploadServer(peerId: Int, type: String? = null, token: String? = null): JsonItem? {
 			return request("docs.getMessagesUploadServer", "peer_id=" + peerId + (if (type != null) "&type=" + encode(type) else ""), token)
 		}
 
@@ -627,7 +619,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return request("docs.save", "file=" + encode(file), token)
 		}
 
-		fun uploadWall(filePath: String, groupId: Int, title: String? = null, tags: String? = null, token: String? = null): JsonItem? {
+		open fun uploadWall(filePath: String, groupId: Int, title: String? = null, tags: String? = null, token: String? = null): JsonItem? {
 			val uploadServerInfo = getWallUploadServer(groupId, token) ?: return null
 			if (isError(uploadServerInfo)) {
 				return uploadServerInfo
@@ -640,12 +632,12 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			return this.save(responseFile["file"] as String, title, tags, token)
 		}
 
-		fun getWallUploadServer(groupId: Int, token: String? = null): JsonItem? {
+		open fun getWallUploadServer(groupId: Int, token: String? = null): JsonItem? {
 			return request("docs.getWallUploadServer", "group_id=$groupId", token)
 		}
 
 
-		fun add(ownerId: Int, docId: Int, accessKey: String? = null, token: String? = null): JsonItem? {
+		open fun add(ownerId: Int, docId: Int, accessKey: String? = null, token: String? = null): JsonItem? {
 			val params = Options("owner_id" to ownerId, "doc_id" to docId)
 			if (accessKey != null)
 				params["access_key"] = accessKey
@@ -655,19 +647,16 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 
 	//////////////////////////////////////
 
-
-
 	private fun encode(o: String): String? {
 		return URLEncoder.encode(o, StandardCharsets.UTF_8)
 	}
 
-	private fun encodeOptions(obj: Options?): String? {
+	private fun encodeOptions(obj: Options): String? {
 		val sb = StringBuilder()
-		if (obj != null)
-			for (o in obj.entries) {
-				sb.append(encode(o.key)).append('=')
-					.append(encode(o.value.toString())).append("&")
-			}
+		for (o in obj.entries) {
+			sb.append(encode(o.key)).append('=')
+				.append(encode(o.value.toString())).append("&")
+		}
 		return sb.toString()
 	}
 
@@ -702,10 +691,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 		return JsonFlowParser.start(res)
 	}
 
-
-	data class Error(val errorCode: Int, val errorMessage: String)
-
-	fun generateExecuteCode(data: List<VkRequestData>, token: String? = null): List<VkRequestData> {
+	open fun generateExecuteCode(data: List<VkRequestData>, token: String? = null): List<VkRequestData> {
 		val sb = StringBuilder()
 		val res = mutableListOf<VkRequestData>()
 
@@ -714,20 +700,20 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			sb.append("a.push(API.").append(item.method).append('('); JsonEncoder.encode(item.options, sb); sb.append("));")
 			if (((i + 1) % 25) == 0) {
 				val str = "var a = [];" + sb.toString() + "return a;"
-				res.add(VkRequestData("execute", Options("code" to str), token?: this@VkApi.token, version))
+				res.add(VkRequestData("execute", Options("code" to str), token?: this.token, version))
 				sb.clear()
 			}
 		}
 
 		if (sb.isNotEmpty()) {
 			val str = "var a = [];" + sb.toString() + "return a;"
-			res.add(VkRequestData("execute", Options("code" to str), token?: this@VkApi.token, version))
+			res.add(VkRequestData("execute", Options("code" to str), token?: this.token, version))
 		}
 		return res
 	}
 
 
-	fun utilsGetShortLink(url: String, isPrivate: Boolean = false, token: String? = null): JsonItem? {
+	open fun utilsGetShortLink(url: String, isPrivate: Boolean = false, token: String? = null): JsonItem? {
 		val options = Options("url" to url, "private" to if (isPrivate) 1 else 0)
 		return request("utils.getShortLink", options, token)
 	}
@@ -744,35 +730,11 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 		return response
 	}
 
-	fun prepareExecuteResponses(data: JsonItem): List<JsonItem> {
-		if (data["response"].isNull()) return emptyList()
-		var numError = 0
-		val result = mutableListOf<JsonItem>()
-		for (i in data["response"].iterable()) {
-			if (i.isPrimitive() && i.asBooleanOrNull() == false) {
-				val executeErrors = if (!data["execute_errors"].isNull()) data["execute_errors"] as List<JsonItem> else emptyList()
-				val errorInfo = executeErrors[numError]
-				result.add(JsonProxyObject("error" to mapOf("error_code" to errorInfo["error_code"], "error_msg" to errorInfo["error_msg"])))
-				numError++
-			} else if (i.isArray()) {
-				val items = i.asList()
-				result.add(JsonProxyObject("response" to mapOf("count" to items.size, "items" to i)))
-			} else {
-				result.add(JsonProxyObject("response" to i))
-			}
-		}
-		return result
-	}
-
-	open fun chat2PeerId(chatId: Int): Int {
-		return 2000000000 + chatId
-	}
-
-	class LongPollSettings(server: String, key: String, mode: String, wait: Int = 10) {
+	open class LongPollSettings(server: String, key: String, mode: String, wait: Int = 10) {
 
 		private var link = "$server?act=a_check&key=$key&wait=$wait&mode=$mode"
 
-		fun getUpdatesLink(ts: String): String {
+		open fun getUpdatesLink(ts: String): String {
 			return "$link&ts=$ts"
 		}
 
@@ -835,6 +797,26 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, privat
 			if (obj == null) return null
 			val error = obj["error"] as Options? ?: return null
 			return "${error["error_msg"]} (${error["error_code"]})"
+		}
+
+		fun prepareExecuteResponses(data: JsonItem): List<JsonItem> {
+			if (data["response"].isNull()) return emptyList()
+			var numError = 0
+			val result = mutableListOf<JsonItem>()
+			val executeErrors = if (data["execute_errors"].isNotNull()) data["execute_errors"] as List<JsonItem> else emptyList()
+			for (i in data["response"].iterable()) {
+				if (i.isPrimitive() && i.asBooleanOrNull() == false) {
+					val errorInfo = executeErrors[numError]
+					result.add(IrisJsonObject("error" to errorInfo))
+					numError++
+				} else if (i.isArray()) {
+					val items = i.asList()
+					result.add(IrisJsonObject("response" to JsonProxyObject("count" to items.size, "items" to items)))
+				} else {
+					result.add(IrisJsonObject("response" to i))
+				}
+			}
+			return result
 		}
 	}
 }

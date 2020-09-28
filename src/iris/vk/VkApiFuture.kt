@@ -66,7 +66,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return execute(res, token)
 		}
 
-		fun setChatTitle(chatId: Int, title: String): VkFuture {
+		open fun setChatTitle(chatId: Int, title: String): VkFuture {
 			return editChat(chatId, title)
 		}
 
@@ -211,7 +211,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return Options("method" to "messages.send", "params" to params, "token" to token)
 		}
 
-		fun getConversationMembers(peerId: Int, fields: String? = null, token: String? = null): VkFuture {
+		open fun getConversationMembers(peerId: Int, fields: String? = null, token: String? = null): VkFuture {
 			return request("messages.getConversationMembers", "peer_id=" + peerId + (if (fields != null) "&fields=" + encode(fields) else ""), token)
 		}
 
@@ -219,11 +219,11 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("messages.getConversationMembers", "peer_id=" + chat2PeerId(chatId) + (if (fields != null) "&fields=" + encode(fields) else ""), token)
 		}
 
-		fun pin(peerId: Int, messageId: Int): VkFuture {
+		open fun pin(peerId: Int, messageId: Int): VkFuture {
 			return request("messages.pin", "peer_id=" + peerId + "&message_id=" + messageId)
 		}
 
-		fun search(q: String, peerId: Int? = 0, count: Int = 10, options: Options? = null, token: String? = null): VkFuture {
+		open fun search(q: String, peerId: Int? = 0, count: Int = 10, options: Options? = null, token: String? = null): VkFuture {
 			val options = options?: Options()
 			options["q"] = q
 			if (peerId != 0)
@@ -233,7 +233,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("messages.search", options, token)
 		}
 
-		fun delete(messageIds: List<Int>, deleteForAll: Boolean = false, isSpam: Boolean = false, token: String? = null): VkFuture {
+		open fun delete(messageIds: List<Int>, deleteForAll: Boolean = false, isSpam: Boolean = false, token: String? = null): VkFuture {
 			val options = Options("message_ids" to messageIds.joinToString(","))
 			if (deleteForAll)
 				options["delete_for_all"] = deleteForAll
@@ -243,11 +243,11 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("messages.delete", options, token)
 		}
 
-		fun getLongPollServer(): VkFuture {
+		open fun getLongPollServer(): VkFuture {
 			return request("messages.getLongPollServer", null as String?)
 		}
 
-		fun getUpdates(lpSettings: LongPollSettings, ts: String, wait: Int = 10): JsonItem? {
+		open fun getUpdates(lpSettings: LongPollSettings, ts: String, wait: Int = 10): JsonItem? {
 			val server = lpSettings.server
 			val key = lpSettings.key
 			val modeRes = lpSettings.mode
@@ -257,7 +257,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return parser(response.responseText)
 		}
 
-		fun sendMulti(data: Collection<Options>): VkFutureList {
+		open fun sendMulti(data: Collection<Options>): VkFutureList {
 			val res = mutableListOf<VkRequestData>()
 			for (it in data) {
 				it.getOrPut("random_id") { (0..Integer.MAX_VALUE).random() }
@@ -266,7 +266,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return execute(res, token)
 		}
 
-		fun sendMessageEventAnswer(eventId: String, userId: Int, peerId: Int, eventData: Options? = null, token: String? = null): VkFuture {
+		open fun sendMessageEventAnswer(eventId: String, userId: Int, peerId: Int, eventData: Options? = null, token: String? = null): VkFuture {
 			return request("messages.sendMessageEventAnswer", Options(
 					"event_id" to eventId
 					, "user_id" to userId
@@ -277,34 +277,34 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 		}
 	}
 
-	inner class Friends {
-		fun add(userId: Int): VkFuture {
+	open inner class Friends {
+		open fun add(userId: Int): VkFuture {
 			return request("friends.add", Options("user_id" to userId))
 		}
 
-		fun getRequests(out: Int = 0, count: Int = 100, token: String? = null): VkFuture {
+		open fun getRequests(out: Int = 0, count: Int = 100, token: String? = null): VkFuture {
 			return request("friends.getRequests", Options("need_viewed" to 1, "count" to count, "out" to out), token)
 		}
 
-		fun delete(id: Int, token: String? = null): VkFuture {
+		open fun delete(id: Int, token: String? = null): VkFuture {
 			return request("friends.delete", Options("user_id" to id), token)
 		}
 
-		fun get(amount: Int = 1000, token: String? = null): Any? {
+		open fun get(amount: Int = 1000, token: String? = null): Any? {
 			return request("friends.get", Options("count" to amount), token)
 		}
 
-		fun delete(userId: Int): VkFuture {
+		open fun delete(userId: Int): VkFuture {
 			return request("friends.delete", "user_id=" + userId)
 		}
 	}
 
 	open inner class Groups {
-		fun leave(groupId: Int): VkFuture {
+		open fun leave(groupId: Int): VkFuture {
 			return request("groups.leave", Options("group_id" to groupId))
 		}
 
-		fun get(userId: Int? = null, extended: Boolean = false, filter: String? = null, fields: String? = null, offset: Int = 0, count: Int = 0, token: String? = null): VkFuture {
+		open fun get(userId: Int? = null, extended: Boolean = false, filter: String? = null, fields: String? = null, offset: Int = 0, count: Int = 0, token: String? = null): VkFuture {
 			val params = Options()
 			if (userId != null)
 				params["user_id"] = userId
@@ -321,25 +321,25 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("groups.get", params, token)
 		}
 
-		fun getById(ids: List<String>, fields: String? = null, token: String? = null): VkFuture {
+		open fun getById(ids: List<String>, fields: String? = null, token: String? = null): VkFuture {
 			return request("groups.getById", Options("group_ids" to ids.joinToString(","), "fields" to fields), token)
 		}
 
-		fun getLongPollSettings(groupId: Int, token: String? = null): VkFuture {
+		open fun getLongPollSettings(groupId: Int, token: String? = null): VkFuture {
 			return request("groups.getLongPollSettings", Options("group_id" to groupId), token)
 		}
 
-		fun setLongPollSettings(groupId: Int, options: Options?, token: String? = null): VkFuture {
+		open fun setLongPollSettings(groupId: Int, options: Options?, token: String? = null): VkFuture {
 			val options = options?: Options()
 			options["group_id"] = groupId
 			return request("groups.setLongPollSettings", options, token)
 		}
 
-		fun getLongPollServer(groupId: Int): VkFuture {
+		open fun getLongPollServer(groupId: Int): VkFuture {
 			return request("groups.getLongPollServer", Options("group_id" to groupId))
 		}
 
-		fun getUpdates(lpSettings: LongPollSettings, ts: String, wait: Int = 10): JsonItem? {
+		open fun getUpdates(lpSettings: LongPollSettings, ts: String, wait: Int = 10): JsonItem? {
 			val server = lpSettings.server
 			val key = lpSettings.key
 			val modeRes = lpSettings.mode
@@ -349,23 +349,23 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return parser(response.responseText)
 		}
 
-		fun getBanned(groupId: Int, token: String? = null): VkFuture {
+		open fun getBanned(groupId: Int, token: String? = null): VkFuture {
 			return request("groups.getBanned", Options("group_id" to groupId), token)
 		}
 
-		fun addCallbackServer(groupId: Int, url: String, title: String, secret: String): VkFuture {
+		open fun addCallbackServer(groupId: Int, url: String, title: String, secret: String): VkFuture {
 			return request("groups.addCallbackServer", Options("group_id" to groupId, "url" to url, "title" to title, "secret_key" to secret))
 		}
 
-		fun deleteCallbackServer(groupId: Int, serverId: Int): VkFuture {
+		open fun deleteCallbackServer(groupId: Int, serverId: Int): VkFuture {
 			return request("groups.deleteCallbackServer", Options("group_id" to groupId, "server_id" to serverId))
 		}
 
-		fun getCallbackConfirmationCode(groupId: Int): VkFuture {
+		open fun getCallbackConfirmationCode(groupId: Int): VkFuture {
 			return request("groups.getCallbackConfirmationCode", Options("group_id" to groupId))
 		}
 
-		fun getMembers(groupId: Int, filter: String? = null, offset: String? = null, count: String? = null, token: String? = null): VkFuture {
+		open fun getMembers(groupId: Int, filter: String? = null, offset: String? = null, count: String? = null, token: String? = null): VkFuture {
 			val options = Options("group_id" to groupId)
 			if (filter != null)
 				options["filter"] = filter
@@ -377,7 +377,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("groups.getMembers", options, token)
 		}
 
-		fun setCallbackSettings(groupId: Int, serverId: Int, options: Options? = null): VkFuture {
+		open fun setCallbackSettings(groupId: Int, serverId: Int, options: Options? = null): VkFuture {
 			//val params = stdClass(options.map);
 			val params = Options("group_id" to groupId, "server_id" to serverId)
 			if (options != null)
@@ -386,41 +386,41 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 
 		}
 
-		fun getCallbackServers(groupId: Int, serverIds: List<Int>? = null, token: String? = null): VkFuture {
+		open fun getCallbackServers(groupId: Int, serverIds: List<Int>? = null, token: String? = null): VkFuture {
 			val options = Options("group_id" to groupId)
 			if (serverIds != null)
 				options["server_ids"] = serverIds.joinToString(",")
 			return request("groups.getCallbackServers", options, token)
 		}
 
-		fun isMember(idUsers: List<Int>, groupId: Int): VkFuture {
+		open fun isMember(idUsers: List<Int>, groupId: Int): VkFuture {
 			return request("groups.isMember", Options("user_ids" to idUsers.joinToString(","), "group_id" to groupId))
 		}
 
-		fun isMember(idUser: Int, groupId: Int): VkFuture {
+		open fun isMember(idUser: Int, groupId: Int): VkFuture {
 			return request("groups.isMember", Options("user_id" to idUser, "group_id" to groupId))
 		}
 	}
 
-	inner class Wall {
+	open inner class Wall {
 
-		fun get(ownerId: Int, offset: Int = 0, count: Int = 100): VkFuture {
+		open fun get(ownerId: Int, offset: Int = 0, count: Int = 100): VkFuture {
 			return request("wall.get", Options("count" to count, "filter" to "all", "owner_id" to ownerId, "offset" to offset))
 		}
 
-		fun delete(id: Int): VkFuture {
+		open fun delete(id: Int): VkFuture {
 			return request("wall.delete", Options("post_id" to id))
 		}
 
-		fun deleteComment(ownerId: Int, commentId: Int, token: String? = null): VkFuture {
+		open fun deleteComment(ownerId: Int, commentId: Int, token: String? = null): VkFuture {
 			return request("wall.deleteComment", "owner_id=$ownerId&comment_id=$commentId", token)
 		}
 
-		fun reportComment(ownerId: Int, commentId: Int, reason: Int = 0, token: String? = null): VkFuture {
+		open fun reportComment(ownerId: Int, commentId: Int, reason: Int = 0, token: String? = null): VkFuture {
 			return request("wall.reportComment", "owner_id=$ownerId&comment_id=$commentId&reason=$reason", token)
 		}
 
-		fun post(ownerId: Int, message: String?, fromGroup: Boolean = false, options: Options? = null): VkFuture {
+		open fun post(ownerId: Int, message: String?, fromGroup: Boolean = false, options: Options? = null): VkFuture {
 			val params = options?: Options()
 			params["owner_id"] = ownerId
 			params["from_group"] = if (fromGroup) "1" else "0"
@@ -430,11 +430,11 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("wall.post", params)
 		}
 
-		fun getComments(ownerId: Int, postId: Int, offset: Int = 0, count: Int = 100): VkFuture {
+		open fun getComments(ownerId: Int, postId: Int, offset: Int = 0, count: Int = 100): VkFuture {
 			return request("wall.getComments", "owner_id=$ownerId&post_id=$postId&offset=$offset&count=$count")
 		}
 
-		fun createComment(ownerId: Int, postId: Int, text: String?, options: Options? = null, token: String? = null): VkFuture {
+		open fun createComment(ownerId: Int, postId: Int, text: String?, options: Options? = null, token: String? = null): VkFuture {
 			val params = Options()
 			if (options != null)
 				params.putAll(options)
@@ -445,7 +445,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("wall.createComment", params, token)
 		}
 
-		fun getReposts(ownerId: Int, postId: Int, offset: Int = 0, count: Int = 10, token: String? = null): VkFuture {
+		open fun getReposts(ownerId: Int, postId: Int, offset: Int = 0, count: Int = 10, token: String? = null): VkFuture {
 			val options = Options("owner_id" to ownerId, "post_id" to postId)
 			if (offset != 0)
 				options["offset"] = offset
@@ -466,15 +466,15 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 		}
 	}
 
-	inner class Account {
-		fun ban(id: Int): VkFuture {
+	open inner class Account {
+		open fun ban(id: Int): VkFuture {
 			return request("account.ban", "owner_id=" + id)
 		}
 	}
 
 	open inner class Photos {
 
-		fun uploadMessagePhoto(photoPath: String, peerId: Int = 0, token: String? = null): JsonItem? {
+		open fun uploadMessagePhoto(photoPath: String, peerId: Int = 0, token: String? = null): JsonItem? {
 			val uploadServerInfoF = this.getMessagesUploadServer(peerId, token)
 			val uploadServerInfo = uploadServerInfoF.get()
 			if (uploadServerInfo == null || isError(uploadServerInfo)) {
@@ -487,7 +487,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return res.get()
 		}
 
-		fun uploadMessagePhoto(data: ByteArray, peerId: Int = 0, type: String = "png", token: String? = null): JsonItem? {
+		open fun uploadMessagePhoto(data: ByteArray, peerId: Int = 0, type: String = "png", token: String? = null): JsonItem? {
 			val uploadServerInfoF = this.getMessagesUploadServer(peerId, token)
 			val uploadServerInfo = uploadServerInfoF.get()
 			if (uploadServerInfo == null || isError(uploadServerInfo)) {
@@ -499,15 +499,15 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return saveMessagesPhotoByObject(Options(responseImage), token).get()
 		}
 
-		fun saveMessagesPhotoByObject(responseImage: Options, token: String? = null): VkFuture {
+		open fun saveMessagesPhotoByObject(responseImage: Options, token: String? = null): VkFuture {
 			return request("photos.saveMessagesPhoto", "photo=" + responseImage["photo"] + "&server=" + responseImage["server"] + "&hash=" + responseImage["hash"], token)
 		}
 
-		fun getMessagesUploadServer(peerId: Int = 0, token: String? = null): VkFuture {
+		open fun getMessagesUploadServer(peerId: Int = 0, token: String? = null): VkFuture {
 			return request("photos.getMessagesUploadServer", if (peerId != 0 ) Options("peer_id" to peerId) else null, token)
 		}
 
-		fun uploadWallPhoto(photoPath: String, userId: Int? = null, groupId: Int? = null, token: String? = null): JsonItem? {
+		open fun uploadWallPhoto(photoPath: String, userId: Int? = null, groupId: Int? = null, token: String? = null): JsonItem? {
 			val uploadServerInfoF = this.getWallUploadServer(userId, groupId, token)
 			val uploadServerInfo = uploadServerInfoF.get()
 			if (uploadServerInfo == null || isError(uploadServerInfo)) {
@@ -520,7 +520,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return saveWallPhotoByObject(Options(responseImage), userId, groupId, token).get()
 		}
 
-		fun uploadAlbumPhoto(photoPath: String, albumId: Int, groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): JsonItem? {
+		open fun uploadAlbumPhoto(photoPath: String, albumId: Int, groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): JsonItem? {
 			val uploadServerInfoF = getUploadServer(albumId, groupId, token)
 			val uploadServerInfo = uploadServerInfoF.get()?: return null
 			if (isError(uploadServerInfo)) {
@@ -533,7 +533,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return this.saveByObject(Options(responseImage), albumId, groupId, caption, options, token).get()
 		}
 
-		fun uploadAlbumPhoto(data: ByteArray, albumId: Int, type: String = "jpg", groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): JsonItem? {
+		open fun uploadAlbumPhoto(data: ByteArray, albumId: Int, type: String = "jpg", groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): JsonItem? {
 			val uploadServerInfoF = getUploadServer(albumId, groupId, token)
 			val uploadServerInfo = uploadServerInfoF.get()?: return null
 			if (isError(uploadServerInfo)) {
@@ -546,14 +546,14 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return this.saveByObject(Options(responseImage), albumId, groupId, caption, options, token).get()
 		}
 
-		fun getUploadServer(albumId: Int, groupId: Int? = null, token: String? = null): VkFuture {
+		open fun getUploadServer(albumId: Int, groupId: Int? = null, token: String? = null): VkFuture {
 			val params = Options("album_id" to albumId)
 			if (groupId != null)
 				params["group_id"] = groupId
 			return request("photos.getUploadServer", params, token)
 		}
 
-		fun saveByObject(responseImage: Options, albumId: Int, groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): VkFuture {
+		open fun saveByObject(responseImage: Options, albumId: Int, groupId: Int? = null, caption: String? = null, options: Options? = null, token: String? = null): VkFuture {
 			val params = options ?: Options()
 			params["album_id"] = albumId
 			if (groupId != null)
@@ -567,7 +567,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("photos.save", params, token)
 		}
 
-		fun getWallUploadServer(userId: Int? = null, groupId: Int? = null, token: String? = null): VkFuture {
+		open fun getWallUploadServer(userId: Int? = null, groupId: Int? = null, token: String? = null): VkFuture {
 			val params = Options()
 			if (userId != null)
 				params["user_id"] = userId
@@ -576,7 +576,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("photos.getWallUploadServer", params, token)
 		}
 
-		fun saveWallPhotoByObject(responseImage: Options, userId: Int? = null, groupId: Int? = null, token: String? = null): VkFuture {
+		open fun saveWallPhotoByObject(responseImage: Options, userId: Int? = null, groupId: Int? = null, token: String? = null): VkFuture {
 			return request(
 				"photos.saveWallPhoto",
 				"user_id=" + userId + "&group_id=" + groupId + "&photo=" + responseImage["photo"] + "&server=" + responseImage["server"] + "&hash=" + responseImage["hash"],
@@ -584,7 +584,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			)
 		}
 
-		fun copy(ownerId: Int, photoId: Int, accessKey: Int? = null, token: String? = null): VkFuture {
+		open fun copy(ownerId: Int, photoId: Int, accessKey: Int? = null, token: String? = null): VkFuture {
 			val params = Options("owner_id" to ownerId, "photo_id" to photoId)
 			if (accessKey != null)
 				params["access_key"] = accessKey
@@ -594,7 +594,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 	}
 
 	open inner class Docs {
-		fun upload(filePath: String, peerId: Int, type: String? = null, title: String? = null, tags: String? = null, token: String? = null): JsonItem? {
+		open fun upload(filePath: String, peerId: Int, type: String? = null, title: String? = null, tags: String? = null, token: String? = null): JsonItem? {
 
 			val uploadServerInfoF = this.getMessagesUploadServer(peerId, type, token)
 			val uploadServerInfo = uploadServerInfoF.get()?: return null
@@ -609,7 +609,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return save(responseFile["file"] as String, title, tags, token).get()
 		}
 
-		fun getMessagesUploadServer(peerId: Int, type: String? = null, token: String? = null): VkFuture {
+		open fun getMessagesUploadServer(peerId: Int, type: String? = null, token: String? = null): VkFuture {
 			return request("docs.getMessagesUploadServer", "peer_id=" + peerId + (if (type != null) "&type=" + encode(type) else ""), token)
 		}
 
@@ -617,7 +617,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return request("docs.save", "file=" + encode(file), token)
 		}
 
-		fun uploadWall(filePath: String, groupId: Int, title: String? = null, tags: String? = null, token: String? = null): JsonItem? {
+		open fun uploadWall(filePath: String, groupId: Int, title: String? = null, tags: String? = null, token: String? = null): JsonItem? {
 			val uploadServerInfoF = getWallUploadServer(groupId, token)
 			val uploadServerInfo = uploadServerInfoF.get() ?: return null
 			if (isError(uploadServerInfo)) {
@@ -631,12 +631,12 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			return this.save(responseFile["file"] as String, title, tags, token).get()
 		}
 
-		fun getWallUploadServer(groupId: Int, token: String? = null): VkFuture {
+		open fun getWallUploadServer(groupId: Int, token: String? = null): VkFuture {
 			return request("docs.getWallUploadServer", "group_id=" + groupId, token)
 		}
 
 
-		fun add(ownerId: Int, docId: Int, accessKey: String? = null, token: String? = null): VkFuture {
+		open fun add(ownerId: Int, docId: Int, accessKey: String? = null, token: String? = null): VkFuture {
 			val params = Options("owner_id" to ownerId, "doc_id" to docId)
 			if (accessKey != null)
 				params["access_key"] = accessKey
@@ -691,7 +691,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 		return future
 	}
 
-	fun generateExecuteCode(data: List<VkRequestData>, token: String? = null): List<VkRequestData> {
+	open fun generateExecuteCode(data: List<VkRequestData>, token: String? = null): List<VkRequestData> {
 		val sb = StringBuilder()
 		val res = mutableListOf<VkRequestData>()
 
@@ -712,7 +712,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 	}
 
 
-	fun utilsGetShortLink(url: String, isPrivate: Boolean = false, token: String? = null): VkFuture {
+	open fun utilsGetShortLink(url: String, isPrivate: Boolean = false, token: String? = null): VkFuture {
 		val options = Options("url" to url, "private" to if (isPrivate) 1 else 0)
 		return request("utils.getShortLink", options, token)
 	}
@@ -726,27 +726,6 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 
 		return VkExecuteFuture(futures)
 	}
-
-	internal fun prepareExecuteResponses(data: JsonItem): List<JsonItem> {
-		if (data["response"].isNull()) return emptyList()
-		var numError = 0
-		val result = mutableListOf<JsonItem>()
-		val executeErrors = if (data["execute_errors"].isNotNull()) data["execute_errors"] as List<JsonItem> else emptyList()
-		for (i in data["response"].iterable()) {
-			if (i.isPrimitive() && i.asBooleanOrNull() == false) {
-				val errorInfo = executeErrors[numError]
-				result.add(IrisJsonObject("error" to errorInfo))
-				numError++
-			} else if (i.isArray()) {
-				val items = i.asList()
-				result.add(IrisJsonObject("response" to JsonProxyObject("count" to items.size, "items" to items)))
-			} else {
-				result.add(IrisJsonObject("response" to i))
-			}
-		}
-		return result
-	}
-
 
 	open fun chat2PeerId(chatId: Int): Int {
 		return 2000000000 + chatId
@@ -813,7 +792,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			val response = mutableListOf<JsonItem?>()
 			for (res in data) {
 				if (res == null) continue
-				val data = prepareExecuteResponses(res)
+				val data = VkApi.prepareExecuteResponses(res)
 				response.addAll(data)
 			}
 			return response
@@ -821,11 +800,11 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 	}
 
 	open inner class Utils {
-		fun checkLink(url: String): VkFuture {
+		open fun checkLink(url: String): VkFuture {
 			return request("utils.checkLink", Options("url" to url))
 		}
 
-		fun checkLinkList(urls: List<String>): VkFutureList {
+		open fun checkLinkList(urls: List<String>): VkFutureList {
 			val futs = mutableListOf<VkFuture>()
 			for (url in urls)
 				futs.add(checkLink(url))
@@ -834,7 +813,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 	}
 
 	open inner class Board {
-		fun getComments(groupId: Int, topicId: Int, startCommentId: Int, options: Options? = null, token: String? = null): VkFuture {
+		open fun getComments(groupId: Int, topicId: Int, startCommentId: Int, options: Options? = null, token: String? = null): VkFuture {
 			val options = options?: Options()
 			options["group_id"] = groupId
 			options["topic_id"] = topicId
@@ -849,7 +828,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 		return JsonFlowParser.start(res)
 	}
 
-	open class VkFuture(val request: VkRequestData? = null) : CompletableFuture<JsonItem?>() {
+	class VkFuture(val request: VkRequestData? = null) : CompletableFuture<JsonItem?>() {
 		companion object {
 			val empty = VkFuture().also { it.complete(null) }
 		}
