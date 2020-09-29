@@ -5,8 +5,6 @@ package iris.vk
 import iris.json.JsonEncoder
 import iris.json.JsonItem
 import iris.json.flow.JsonFlowParser
-import iris.json.plain.IrisJsonObject
-import iris.json.proxy.JsonProxyObject
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.*
