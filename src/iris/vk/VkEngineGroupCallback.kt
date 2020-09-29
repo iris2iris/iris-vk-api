@@ -34,12 +34,17 @@ open class VkEngineGroupCallback (
 
 	interface GroupbotSource {
 
+		fun isGetByRequest(): Boolean
 		fun getGroupbot(request: HttpExchange): Groupbot?
+
+		fun getGroupbot(groupId: Int): Groupbot?
 
 		class Groupbot(val id: Int, val confirmation: String, val secret: String?)
 
 		class SimpleGroupSource(private val gb: Groupbot) : GroupbotSource {
+			override fun isGetByRequest() = true
 			override fun getGroupbot(request: HttpExchange) = gb
+			override fun getGroupbot(groupId: Int) = gb
 		}
 	}
 
@@ -94,12 +99,16 @@ open class VkEngineGroupCallback (
 				}
 			}
 
-			val groupbot = gbSource.getGroupbot(request)
-			if (groupbot == null) {
-				logger.info {"Groupbot not found. " + request.requestURI }
-				writeResponse(request, "ok")
-				return
-			}
+			var groupbot = if (gbSource.isGetByRequest()) {
+				val groupbot = gbSource.getGroupbot(request)
+				if (groupbot == null) {
+					logger.info { "Groupbot not found. " + request.requestURI }
+					writeResponse(request, "ok")
+					return
+				}
+				groupbot
+			} else
+				null // значит информацию о группе возьмём позже из JSON ответа в поле group_id
 
 			val body = getBody(request)
 
@@ -113,10 +122,20 @@ open class VkEngineGroupCallback (
 				val event: JsonItem = JsonFlowParser.start(body)
 
 				val groupId = event["group_id"].asInt()
-				if (groupId != groupbot.id) {
-					logger.info { "Group ID from code is not identical with response object: obj=" + groupId + " vs gb=" + groupbot.id }
-					writeResponse(request, "ok")
-					return
+				if (groupbot == null) {
+					groupbot = gbSource.getGroupbot(groupId)
+					if (groupbot == null) {
+						logger.info { "Groupbot not found. " + request.requestURI }
+						writeResponse(request, "ok")
+						return
+					}
+
+				} else { // groupbot был получен из информации запроса (URI/query), поэтому нужно дополнительно проверить, совпадают ли данные группы
+					if (groupId != groupbot.id) {
+						logger.info { "Group ID from code is not identical with response object: obj=" + groupId + " vs gb=" + groupbot.id }
+						writeResponse(request, "ok")
+						return
+					}
 				}
 
 				val type = event["type"].asString()

@@ -12,7 +12,7 @@ fun main() {
 	TestUtil.init()
 	val props = TestUtil.getProperties()
 
-	val secret = props.getProperty("group.secret")
+	val secret = props.getProperty("group.secret").ifBlank { null }
 	val confirmation = props.getProperty("group.confirmation")
 	val groupId = props.getProperty("group.id").toInt()
 
