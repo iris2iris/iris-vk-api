@@ -12,6 +12,10 @@ import java.util.concurrent.Executors
 import java.util.logging.Logger
 
 /**
+ * Движок, получающий события от VK Callback API.
+ *
+ * Собирает события в очередь для дальнейшей выдачи их методом [retrieve]
+ *
  * @created 08.02.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
@@ -24,25 +28,62 @@ open class VkEngineGroupCallback (
 		private val requestsExecutor: Executor = Executors.newFixedThreadPool(4),
 		queueSize: Int = 1000,
 		expireEventTime: Long = 25_000L,
-		vkTimeVsLocalTimeDiff: Long = 0L,
+		vkTimeVsLocalTimeDiff: Long = 0L
 ) : VkRetrievable {
 
+	/**
+	 * Проверяет подлинность источника входящего запроса
+	 *
+	 * [VkAddressTesterDefault] — реализует проверку входящего адреса на принадлежность указанным подсетям. По умолчанию
+	 * `95.142.192.0/21` и `2a00:bdc0::/32`
+	 *
+	 * @see VkAddressTesterDefault
+	 */
 	interface AddressTester {
+
+		/**
+		 * Проверяет подлинность источника.
+		 */
 		fun isGoodHost(request: HttpExchange): Boolean
+
+		/**
+		 * Должен вернуть IP адрес реального источника. Если запрос происходит от источника через прокси,например, Cloudflare
+		 * или локальный проброс порта.
+		 *
+		 * Вызывается исключительно для логгирования неизвестных IP адресов
+		 */
 		fun getRealHost(request: HttpExchange): String
 	}
 
 	interface GroupbotSource {
-
+		/**
+		 * Указывает, содержится ли информация о группе в URI или query запроса.
+		 *
+		 * Полезно фильтровать ложные запросы, не тратя ресурсы на извлечение информации из JSON
+		 */
 		fun isGetByRequest(): Boolean
+
+		/**
+		 * Извлекает информацию о группе из запроса, содержащуюся в URI или query.
+		 *
+		 * Например, URI может содержать такую информацию `/callback/fa33a6`, где код `fa33a6` сопоставляется с
+		 * одной из имеющихся групп.
+		 *
+		 * Выполняется в случае `isGetByRequest() == true`
+		 */
 		fun getGroupbot(request: HttpExchange): Groupbot?
 
+		/**
+		 * Извлекает информацию о группе по её ID.
+		 *
+		 * Выполняется в случае `isGetByRequest() == false`
+		 */
 		fun getGroupbot(groupId: Int): Groupbot?
 
 		class Groupbot(val id: Int, val confirmation: String, val secret: String?)
 
 		class SimpleGroupSource(private val gb: Groupbot) : GroupbotSource {
-			override fun isGetByRequest() = true
+			override fun isGetByRequest() = false
 			override fun getGroupbot(request: HttpExchange) = gb
 			override fun getGroupbot(groupId: Int) = gb
 		}

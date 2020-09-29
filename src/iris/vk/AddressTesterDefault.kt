@@ -7,11 +7,16 @@ import java.net.InetAddress
 
 
 /**
+ * Проверяет подлинность источника входящего запроса
+ *
+ * @param ipSubnets Список доверенных подсетей. По умолчанию `95.142.192.0/21` и `2a00:bdc0::/32`
+ * @param realIpHeader Если указан, извлекает информацию из заголовка запроса с указанным в `realIpHeader` названием.
+ * Например, `X-Real-IP`, `CF-Connecting-IP` и подобные
  * @created 29.09.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 class VkAddressTesterDefault(
-	ipSubnets: Array<String>,
+	ipSubnets: Array<String> = arrayOf("95.142.192.0/21", "2a00:bdc0::/32"),
 	private val realIpHeader: String? = null
 ) : AddressTester {
 
@@ -31,6 +36,7 @@ class VkAddressTesterDefault(
 			else
 				InetAddress.getByName(host)
 		}).address.let { BigInteger(it) }
+
 		return ipSubnets.any { it.isInNet(address) }
 	}
 
