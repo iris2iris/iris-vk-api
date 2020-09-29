@@ -6,8 +6,8 @@ import com.sun.net.httpserver.HttpServer
 import iris.json.JsonItem
 import iris.json.flow.JsonFlowParser
 import java.net.InetSocketAddress
-import java.net.URI
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.logging.Logger
 
@@ -21,36 +21,43 @@ open class VkEngineGroupCallback (
 		private val addressTester: AddressTester? = null,
 		private val port: Int = 80,
 		private val path: String = "/callback",
-		private val expireEventTime: Long = 25_000L,
+		private val requestsExecutor: Executor = Executors.newFixedThreadPool(4),
+		queueSize: Int = 1000,
+		expireEventTime: Long = 25_000L,
+		vkTimeVsLocalTimeDiff: Long = 0L,
 ) : VkRetrievable {
 
 	interface AddressTester {
-		fun isGoodHost(address: String): Boolean
+		fun isGoodHost(request: HttpExchange): Boolean
+		fun getRealHost(request: HttpExchange): String
 	}
 
 	interface GroupbotSource {
-		fun getGroupbot(uri: URI): Groupbot?
+
+		fun getGroupbot(request: HttpExchange): Groupbot?
 
 		class Groupbot(val id: Int, val confirmation: String, val secret: String?)
 
 		class SimpleGroupSource(private val gb: Groupbot) : GroupbotSource {
-			override fun getGroupbot(uri: URI) = gb
+			override fun getGroupbot(request: HttpExchange) = gb
 		}
 	}
 
 	companion object {
-		private val logger = Logger.getLogger("iris.vk")
 		var loggingExpired = false
+
+		private val logger = Logger.getLogger("iris.vk")
 	}
 
-	private val queue: ArrayBlockingQueue<JsonItem> = ArrayBlockingQueue(1000)
+	private val queue: ArrayBlockingQueue<JsonItem> = ArrayBlockingQueue(queueSize)
 	private val queueWait = Object()
+	private val expireEventTime = expireEventTime - vkTimeVsLocalTimeDiff
 
 	override fun start() {
 		val server = HttpServer.create()
 		server.bind(InetSocketAddress(port), 0)
 
-		server.executor = Executors.newFixedThreadPool(20)
+		server.executor = requestsExecutor
 		server.createContext(path, CallbackHandler())
 		server.start()
 		logger.fine {"CALLBACK SERVER STARTED. PORT: $port" }
@@ -60,7 +67,7 @@ open class VkEngineGroupCallback (
 		synchronized(queueWait) {
 			do {
 				if (queue.size != 0) {
-					val res = queue.toTypedArray()
+					val res = queue.toArray(arrayOfNulls<JsonItem>(queue.size)) as Array<JsonItem>
 					queue.clear()
 					return res
 				}
@@ -71,30 +78,23 @@ open class VkEngineGroupCallback (
 		}
 	}
 
-	protected fun getHost(request: HttpExchange): String {
-		val fwd = request.requestHeaders.getFirst("X-Real-IP")
-		val host = fwd ?: request.remoteAddress.address.hostAddress
-		return host
-	}
-
 	inner class CallbackHandler : HttpHandler {
 
 		private var expired: Long = 0
 		private val exp = Any()
 
 		override fun handle(request: HttpExchange) {
-			logger.finest("Callback API event")
+			logger.finest {"Callback API event from " + request.remoteAddress }
 
 			if (addressTester != null) {
-				val host = getHost(request)
-				if (!addressTester.isGoodHost(host)) {
-					logger.info {"Bad request address: $host" }
+				if (!addressTester.isGoodHost(request)) {
+					logger.info { "Unknown host trying to send Callback API event: " + addressTester.getRealHost(request) }
 					writeResponse(request, "ok")
 					return
 				}
 			}
 
-			val groupbot = gbSource.getGroupbot(request.requestURI)
+			val groupbot = gbSource.getGroupbot(request)
 			if (groupbot == null) {
 				logger.info {"Groupbot not found. " + request.requestURI }
 				writeResponse(request, "ok")
@@ -109,35 +109,34 @@ open class VkEngineGroupCallback (
 					writeResponse(request, "ok")
 					return
 				}
-				val groupId: Int
-				val event = JsonFlowParser.start(body)
 
-				groupId = event["group_id"].asInt()
+				val event: JsonItem = JsonFlowParser.start(body)
+
+				val groupId = event["group_id"].asInt()
 				if (groupId != groupbot.id) {
-					logger.warning {"Group ID from code is not identical with response object: obj=" + groupId + " vs gb=" + groupbot.id }
+					logger.info { "Group ID from code is not identical with response object: obj=" + groupId + " vs gb=" + groupbot.id }
 					writeResponse(request, "ok")
 					return
 				}
 
-				if (event["type"].equals("confirmation")) {
+				val type = event["type"].asString()
+				if (type == "confirmation") {
 					val res = groupbot.confirmation
-					logger.fine {"Test confirmation. Group ID: $groupId" }
+					logger.finest {"Test confirmation. Group ID: $groupId" }
 					writeResponse(request, res)
 					return
 				}
 
-				if (!groupbot.secret.isNullOrEmpty() && groupbot.secret != event["secret"].asStringOrNull()) {
+				writeResponse(request, "ok")
+
+				if (groupbot.secret != null && groupbot.secret != event["secret"].asStringOrNull()) {
 					logger.info {"Secret is wrong: group id ${groupbot.id}" }
-					writeResponse(request, "ok")
 					return
 				}
 
-				writeResponse(request, "ok")
-				//event["groupbot"] = groupbot
-				//event["groupbot"] = groupbot
 				var testDate = true
 				val obj = try {
-					when (event["type"].asString()) {
+					when (type) {
 						"message_new" -> (if (event["object"]["message"].isNotNull()) event["object"]["message"] else if (event["object"]["text"].isNotNull()) event["object"] else return)
 						"message_reply" -> event["object"]
 						"message_edit" -> event["object"]
@@ -159,8 +158,12 @@ open class VkEngineGroupCallback (
 
 				if (suitsTime) {
 					synchronized(queueWait) {
-						queue.offer(event)
-						queueWait.notify()
+						if (queue.offer(event))
+							queueWait.notify()
+						else {
+							logger.warning { "Callback API queue is full (${queue.size} elements). Clearing..." }
+							queue.clear()
+						}
 					}
 					if (loggingExpired) {
 						synchronized(exp) {
