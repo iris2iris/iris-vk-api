@@ -682,10 +682,16 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 			sb.append(options)
 
 		sb.append("&access_token=").append(token).append("&v=").append(version)
-		val res = connect.request("https://api.vk.com/method/$method", sb.toString()).get()?.responseText ?: return VkFuture.empty
-		val ret = parser(res)
+
 		val future = VkFuture()
-		future.complete(ret)
+		connect.request("https://api.vk.com/method/$method", sb.toString()).thenAccept {
+			if (it == null) {
+				future.complete(null)
+			} else {
+				val ret = parser(it.responseText)
+				future.complete(ret)
+			}
+		}
 		return future
 	}
 
