@@ -22,13 +22,20 @@ val res = vk.messages.send(userToId, "Привет. Это сообщение с
 println(res?.obj())
 ```
 
-### VkApi на Completable Future
+### VkApi методом Future
 
 ```kotlin
 val vk = VkApiFuture(token)
-vk.messages.send(userToId, "Привет. Это сообщение с Kotlin").thenApply {
+vk.messages.send(userToId, "Привет. Это сообщение с Kotlin").thenAccept {
+    println("Это сообщение появится вторым")
     println(it?.obj())
 }
+println("Это сообщение появится первым, т.к. метод Future неблокирующий")
+
+// А можно сделать последовательное исполнение
+val future = vk.messages.send(userToId, "Привет. Это сообщение с Kotlin")
+val result = future.get() // дожидаемся ответа
+println(result?.obj()) // выводим результат
 ```
 
 ### VkApi, упаковывающий запросы в execute
@@ -101,6 +108,7 @@ while (true) {
     }
 }
 ```
+Также смотрите более развёрнутый пример использования `VkEngineCallback` [iris.vk.test/group_cb_multibot.kt](https://github.com/iris2iris/iris-vk-api/blob/master/src/iris/vk/test/group_cb_multibot.kt)
 
 Все приведённые выше примеры доступны в пакете [iris.vk.test](https://github.com/iris2iris/iris-vk-api/blob/master/src/iris/vk/test)
 
