@@ -19,6 +19,10 @@ object VkKeyboard {
 	const val CALLBACK_SILENT	= 1
 	const val CALLBACK_MANUAL_HANDLE	= 2
 
+	fun text(label: String, payload: Options, color: String = COLOR_PRIMARY): Options {
+		return text(label, JsonEncoder.encode(payload), color)
+	}
+
 	fun text(label: String, payload: String = "", color: String = COLOR_PRIMARY): Options {
 		return Options(
 			"action" to Options(
@@ -28,6 +32,10 @@ object VkKeyboard {
 			)
 			, "color" to color
 		)
+	}
+
+	fun callback(label: String, payload: Options, color: String = COLOR_PRIMARY): Options {
+		return callback(label, JsonEncoder.encode(payload), color)
 	}
 
 	fun callback(label: String, payload: String = "", color: String = COLOR_PRIMARY): Options {
