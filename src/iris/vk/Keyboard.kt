@@ -8,7 +8,7 @@ import iris.json.JsonEncoder
  * @created 08.02.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-object VkBotKeyboard {
+object VkKeyboard {
 
 	const val COLOR_PRIMARY		= "primary"
 	const val COLOR_SECONDARY	= "secondary"
