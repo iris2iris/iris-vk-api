@@ -5,6 +5,7 @@ import iris.json.JsonItem
 import iris.json.JsonObject
 import iris.json.proxy.JsonProxyObject
 import iris.vk.VkApi.LongPollSettings
+import java.util.*
 import java.util.logging.Logger
 
 /**
@@ -197,6 +198,8 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 			this.processLeaves(checkLeave)
 	}
 
+	private inline fun <E>mutableListOf() = LinkedList<E>()
+
 	fun processMessages(messages: List<VkMessage>) {
 		this.eventHandler.processMessages(messages)
 	}
@@ -271,8 +274,8 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 					val attachments = mutableListOf<MutableMap<String, Any?>?>()
 					val m7 = m[7] as JsonObject
 					for (el in m7) {
-						val key = el.key
-						val addValue = el.key
+						val key = el.first
+						val addValue = el.second
 						if (!key.startsWith("attach")) continue
 						val data = key.split("_")
 						val num = data[0].substring("attach".length).toInt() - 1

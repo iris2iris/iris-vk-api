@@ -5,6 +5,7 @@ import iris.json.JsonItem
 import iris.json.proxy.JsonProxyObject
 import iris.vk.VkApi.Companion.peer2ChatId
 import iris.vk.VkApi.LongPollSettings
+import java.util.*
 
 /**
  * @created 08.09.2019
@@ -112,5 +113,7 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 		if (checkLeave != null)
 			this.processLeaves(checkLeave)
 	}
+
+	private inline fun <E>mutableListOf() = LinkedList<E>()
 
 }
