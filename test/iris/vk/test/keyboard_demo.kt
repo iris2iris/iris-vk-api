@@ -29,25 +29,27 @@ fun main() {
 
 		val vk = VkApi(token)
 		val res = vk.messages.send(userToId, "Клавиатура на простых кнопках", Options("keyboard" to keyboard))
-		println(res)
+		println(res?.obj())
 	}
 
 	// Пример с callback кнопками
 	run {
-		val keyboard = VkKeyboard.createJson(arrayOf(
+		val keyboard = with(VkKeyboard) {
+			createJson(arrayOf(
 				arrayOf(
-						VkKeyboard.callback("Simple"), // простая кнопка без payload
-						VkKeyboard.callback("Yes", payload = "{\"command\": \"yes\"}", color = VkKeyboard.COLOR_POSITIVE), // payload тектом
-						VkKeyboard.callback("No", payload = VkKeyboard.cmd(command = "no"), color = VkKeyboard.COLOR_NEGATIVE) // payload через функцию
+					callback("Simple"), // простая кнопка без payload
+					callback("Yes", payload = "{\"command\": \"yes\"}", color = COLOR_POSITIVE), // payload тектом
+					callback("No", payload = cmd(command = "no"), color = COLOR_NEGATIVE) // payload через функцию
 				),
 				arrayOf(
-						VkKeyboard.callbackCommand(label = "Long button", command = "long"), // payload внутри метода textCommand
-						VkKeyboard.callback(label = "Long button", payload = Options("test" to "yes")) // произвольный payload
+					callbackCommand(label = "Long button", command = "long"), // payload внутри метода textCommand
+					callback(label = "Long button", payload = Options("test" to "yes")) // произвольный payload
 				)
-		), inline = true /* default value true */)
+			), inline = true /* default value true */)
+		}
 
 		val vk = VkApi(token)
 		val res = vk.messages.send(userToId, "Клавиатура на callback-кнопках", Options("keyboard" to keyboard))
-		println(res)
+		println(res?.obj())
 	}
 }
