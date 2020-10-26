@@ -3,6 +3,7 @@ package iris.vk
 import iris.json.JsonArray
 import iris.json.JsonItem
 import iris.json.JsonObject
+import iris.json.asObject
 import iris.json.proxy.JsonProxyObject
 import iris.vk.VkApi.LongPollSettings
 import java.util.*
@@ -15,6 +16,8 @@ import java.util.logging.Logger
 
 // TODO: Проверить
 open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
+
+	constructor(token: String, eventHandler: VkHandler) : this(VkApi(token), eventHandler)
 
 	var workStatus = true
 	companion object {
@@ -35,9 +38,9 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 
 		logger.fine("Server received. Starting listening")
 
-		var lastTs = longPoll["response"]["ts"].asString()
+		var lastTs = longPoll["response"]["ts"].obj().toString()
 		val accessMode = (2 + 8).toString()
-		var longPollSettings = LongPollSettings(longPoll["response"]["server"].asString(), longPoll["response"]["key"].asString(), accessMode)
+		var longPollSettings = LongPollSettings("https://" + longPoll["response"]["server"].asString(), longPoll["response"]["key"].asString(), accessMode)
 		loop@ while (this.workStatus)  {
 			val updates = getUpdates(longPollSettings, lastTs)
 
@@ -122,7 +125,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 					return
 				}
 			}
-			lastTs = updates["ts"].asString()
+			lastTs = updates["ts"].obj().toString()
 			processUpdates(updates["updates"] as JsonArray)
 		}
 	}
@@ -147,10 +150,10 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 		val checkLeave = mutableListOf<VkMessage>()
 
 		for (update in updates) {
-			if (update !is List<Any?>) continue
+			if (!update.isArray()) continue
 			if (update[0].asLong() == 4L) { // это сообщение
 				if (update[7]["source_act"].isNull()) {
-					when (update[7]["source_act"].asString()) {
+					when (update[7]["source_act"].asStringOrNull()) {
 						"chat_invite_user" -> checkInvites += VkMessage(
 							JsonProxyObject(
 								"user_id" to update[7]["source_mid"].asInt(),
@@ -232,7 +235,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 		for (m in messages) {
 			val m = m.source
 			messageIds.add(m[1].asInt())
-			if (!m[7]["fwd"].isNotNull() || m[7]["attach1_type"].isNotNull() && m[7]["attach1_type"].asString() == "wall") {
+			if (m[7]["fwd"].isNotNull() || m[7]["attach1_type"].isNotNull() && m[7]["attach1_type"].asString() == "wall") {
 				needExtend = true
 				break
 			}
@@ -255,16 +258,16 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 				val chatId = VkApi.peer2ChatId(peerId)
 				val fromId: Int
 				if (chatId > 0) {
-					fromId = m[7]["from"].asInt()
+					fromId = m[7]["from"].asString().toInt()
 				} else {
 					fromId = peerId
 				}
-				val t = JsonProxyObject(
+				val t = mutableMapOf<String, Any?>(
 					"id" to m[1].asInt(),
 					"chat_id" to chatId,
 					"peer_id" to peerId,
 					"from_id" to fromId,
-					"text" to m[6],
+					"text" to m[6].asString(),
 					"command" to "",
 					"isToBot" to false,
 					"date" to m[4].asLong()
@@ -306,7 +309,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 					if (resAttachments.size > 0)
 						t["attachments"] = resAttachments
 				}
-				ret += VkMessage(t)
+				ret += VkMessage(JsonProxyObject("message" to t))
 			}
 		}
 		return ret

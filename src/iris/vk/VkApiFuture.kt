@@ -5,6 +5,7 @@ package iris.vk
 import iris.json.JsonEncoder
 import iris.json.JsonItem
 import iris.json.flow.JsonFlowParser
+import iris.vk.VkApi.LongPollSettings
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -246,10 +247,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 		}
 
 		open fun getUpdates(lpSettings: LongPollSettings, ts: String, wait: Int = 10): JsonItem? {
-			val server = lpSettings.server
-			val key = lpSettings.key
-			val modeRes = lpSettings.mode
-			val response = connect.request("https://$server?act=a_check&key=$key&ts=$ts&wait=$wait&mode=$modeRes").get()
+			val response = connect.request(lpSettings.getUpdatesLink(ts)).get()
 			if (response == null || response.code != 200)
 				return null;
 			return parser(response.responseText)
@@ -338,10 +336,7 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 		}
 
 		open fun getUpdates(lpSettings: LongPollSettings, ts: String, wait: Int = 10): JsonItem? {
-			val server = lpSettings.server
-			val key = lpSettings.key
-			val modeRes = lpSettings.mode
-			val response = connect.request("$server?act=a_check&key=$key&ts=$ts&wait=$wait&mode=$modeRes").get()
+			val response = connect.request(lpSettings.getUpdatesLink(ts)).get()
 			if (response == null || response.code != 200)
 				return null
 			return parser(response.responseText)
@@ -710,13 +705,13 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 		return VkExecuteFuture(futures)
 	}
 
-	class LongPollSettings(var server: String, var key: String, var mode: String) {
+	/*class LongPollSettings(var server: String, var key: String, var mode: String) {
 		companion object {
 			fun build(data: Options): LongPollSettings {
 				return LongPollSettings(data.getString("server"), data.getString("key"), data.getString("mode"))
 			}
 		}
-	}
+	}*/
 
 	companion object {
 		fun chat2PeerId(chatId: Int): Int {
