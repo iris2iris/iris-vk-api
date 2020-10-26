@@ -34,6 +34,9 @@ fun main() {
 				// Шлём ответ
 				vk.messages.send(messageItem["from_id"].asInt(), "ПОНГ")
 			}
+			val attachments = messageItem["attachments"]
+			if (attachments.isNotNull())
+				println("	Attachment: " + attachments.obj())
 		}
 	}
 

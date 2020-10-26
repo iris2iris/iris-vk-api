@@ -3,7 +3,7 @@ package iris.vk
 import iris.json.JsonArray
 import iris.json.JsonItem
 import iris.json.JsonObject
-import iris.json.asObject
+import iris.json.plain.IrisJsonParser
 import iris.json.proxy.JsonProxyObject
 import iris.vk.VkApi.LongPollSettings
 import java.util.*
@@ -274,40 +274,42 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 				)
 
 				if (m[7].isNotNull()) {
-					val attachments = mutableListOf<MutableMap<String, Any?>?>()
+
 					val m7 = m[7] as JsonObject
-					for (el in m7) {
-						val key = el.first
-						val addValue = el.second
-						if (!key.startsWith("attach")) continue
-						val data = key.split("_")
-						val num = data[0].substring("attach".length).toInt() - 1
-						if (num + 1 > attachments.size) {
-							extendCapacity(attachments as MutableList<Any?>, num + 1)
-							attachments[num] = mutableMapOf<String, Any?>()
-						}
-						val addKey = if (data.size > 1) data[1] else "id"
-						attachments[num]!![addKey] = addValue
-					}
-					val resAttachments = mutableListOf<JsonItem>()
-					if (attachments.size > 0) {
-						for (a in attachments) {
-							if (a == null) continue
-							var type: String? = null
-							val values = mutableMapOf<String, Any?>()
-							for ((key, value) in a) {
-								if (key == "type")
-									type = value as String
-								else
-									values[key] = value
+
+					val attachmentsFull = m7["attachments"]
+					val attachments = if (attachmentsFull.isNull()) {
+						val attachments = mutableListOf<MutableMap<String, Any?>?>()
+						for (el in m7) {
+							val key = el.first
+							val addValue = el.second
+							if (!key.startsWith("attach")) continue
+							val data = key.split("_")
+							val num = data[0].substring("attach".length).toInt() - 1
+							if (num + 1 > attachments.size) {
+								extendCapacity(attachments as MutableList<Any?>, num + 1)
+								attachments[num] = mutableMapOf<String, Any?>()
 							}
-							if (type != null)
-								resAttachments.add(JsonProxyObject("type" to type, type to values))
+							val addKey = if (data.size > 1) data[1] else "id"
+							attachments[num]!![addKey] = addValue.obj()
 						}
+						attachments
+					} else {
+						IrisJsonParser(attachmentsFull.asString()).parse().asList() as List<MutableMap<String, Any?>>
 					}
 
-					if (resAttachments.size > 0)
-						t["attachments"] = resAttachments
+					if (attachments.isNotEmpty()) {
+						val resAttachments = ArrayList<Map<String, Any?>>(attachments.size)
+						for (a in attachments) {
+							if (a == null) continue
+							val type: String? = a.remove("type") as String?
+							if (type != null) {
+								resAttachments.add(mapOf("type" to type, type to a))
+							}
+						}
+						if (resAttachments.size > 0)
+							t["attachments"] = resAttachments
+					}
 				}
 				ret += VkMessage(JsonProxyObject("message" to t))
 			}
