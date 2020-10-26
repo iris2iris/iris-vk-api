@@ -92,7 +92,15 @@ listener.run() // блокирует дальнейшее продвижение
 exitProcess(0)
 ```
 
-### VkEngineCallback - слушатель событий методом VK Callback API
+### VkEngineUser — слушатель событий пользовательского Long Poll
+Всё то же самое, что и у `VkEngineGroup`, только вместо этого класса используется `VkEngineUser`
+```kotlin
+...
+val listener = VkEngineUser(token, simpleMessageHandler)
+...
+```
+
+### VkEngineCallback — слушатель событий методом VK Callback API
 
 ```kotlin
 val cbEngine = VkEngineGroupCallback(
