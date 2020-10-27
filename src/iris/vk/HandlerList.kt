@@ -4,7 +4,15 @@ package iris.vk
  * @created 08.02.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class VkHandlerList(val list: MutableList<VkHandler>) : VkHandler {
+class VkHandlerList(val list: List<VkHandler>) : VkHandler {
+
+	operator fun plusAssign(handler: VkHandler) {
+		add(handler)
+	}
+
+	fun add(handler: VkHandler) {
+		(list as MutableList<VkHandler>).add(handler)
+	}
 
 	override fun processMessages(messages: List<VkMessage>) {
 		for (l in list) {
