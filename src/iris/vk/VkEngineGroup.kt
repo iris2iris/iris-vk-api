@@ -71,7 +71,7 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 							if (checkInvites == null) checkInvites = mutableListOf()
 							checkInvites.add(VkMessage(
 								IrisJsonObject(
-									"user_id" to message["action"]["member_id"],
+									"user_id" to message["from_id"],
 									"chat_id" to JsonProxyValue(peer2ChatId(message["peer_id"].asInt())),
 									"from_id" to message["from_id"],
 									"date" to message["date"],
