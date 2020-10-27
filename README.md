@@ -10,7 +10,7 @@
 ##### Прямая ссылка:
 
 - Вы можете скачать [подготовленные релизы](https://github.com/iris2iris/iris-vk-api/releases), чтобы скачать JAR файл напрямую.
-- Также вам необходимо скачать зависимость — JAR файл [Iris JSON Parser](https://github.com/iris2iris/iris-vk-api/releases/download/v0.1/iris-json-parser.jar)
+- Также вам необходимо скачать зависимость — JAR файл [Iris JSON Parser](https://github.com/iris2iris/iris-vk-api/releases/download/v0.1.1/iris-json-parser.jar)
 
 ## Как это использовать
 
@@ -79,9 +79,8 @@ val simpleMessageHandler = object : VkHandlerAdapter() {
 
         // message.text — это метод, подготавливает текст для дальнейшей работы
         val text = message.text
-        val messageItem = message.source["message"]
         if (text.equals("пинг", true))
-            vk.messages.send(messageItem["from_id"].asInt(), "ПОНГ")
+            vk.messages.send(message.peerId, "ПОНГ")
     }
 }
 
@@ -95,9 +94,9 @@ exitProcess(0)
 ### VkEngineUser — слушатель событий пользовательского Long Poll
 Всё то же самое, что и у `VkEngineGroup`, только вместо этого класса используется `VkEngineUser`
 ```kotlin
-...
+//...
 val listener = VkEngineUser(token, simpleMessageHandler)
-...
+//...
 ```
 
 ### VkEngineCallback — слушатель событий методом VK Callback API
@@ -116,9 +115,35 @@ while (true) {
     }
 }
 ```
-Также смотрите более развёрнутый пример использования `VkEngineCallback` [iris.vk.test/group_cb_multibot.kt](https://github.com/iris2iris/iris-vk-api/blob/master/src/iris/vk/test/group_cb_multibot.kt)
+Также смотрите более развёрнутый пример использования `VkEngineCallback` [iris.vk.test/group_cb_multibot.kt](https://github.com/iris2iris/iris-vk-api/blob/master/test/iris/vk/test/group_cb_multibot.kt)
 
-Все приведённые выше примеры доступны в пакете [iris.vk.test](https://github.com/iris2iris/iris-vk-api/blob/master/src/iris/vk/test)
+### VkCommandHandler
+
+Возможность добавлять обработчики каждой текстовой команды отдельным обработчиком
+```kotlin
+val commandsHandler = VkCommandHandler()
+
+commandsHandler += SimpleCommand("пинг") {
+    vk.messages.send(it.peerId, "ПОНГ!")
+}
+
+commandsHandler += "р" to RegexCommand(Regex("рандом (\\d+) (\\d+)")) {vkMessage, params ->
+    var first = params[1].toInt()
+    var second = params[2].toInt()
+    if (second < first) {
+        val tmp = second
+        second = first
+        first = tmp
+    }
+    vk.messages.send(vkMessage.peerId, "🎲 Случайное значение в диапазоне [$first..$second] выпало на ${(first..second).random()}")
+}
+
+// Передаём в параметрах слушателя событий токен и созданный обработчик команд
+val listener = VkEngineGroup(token, commandsHandler)
+listener.run()
+```
+
+Все приведённые выше примеры доступны в пакете [iris.vk.test](https://github.com/iris2iris/iris-vk-api/blob/master/test/iris/vk/test)
 
 ## Дополнительная информация
 
