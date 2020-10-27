@@ -2,7 +2,8 @@ package iris.vk
 
 import iris.json.JsonArray
 import iris.json.JsonItem
-import iris.json.proxy.JsonProxyObject
+import iris.json.proxy.JsonProxyValue
+import iris.json.plain.IrisJsonObject
 import iris.vk.VkApi.Companion.peer2ChatId
 import iris.vk.VkApi.LongPollSettings
 import java.util.*
@@ -33,6 +34,10 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 		return vkApi.groups.getUpdates(lpSettings, ts)
 	}
 
+	override fun getLongPollSettings(server: String, key: String, accessMode: String): LongPollSettings {
+		return LongPollSettings(server, key, accessMode)
+	}
+
 	override fun processUpdates(updates: JsonArray) {
 
 		var checkMessages: MutableList<VkMessage>? = null
@@ -49,13 +54,13 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 						"chat_invite_user" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
 							checkInvites.add(VkMessage(
-									JsonProxyObject(
-											"user_id" to message["action"]["member_id"].asInt(),
-											"chat_id" to peer2ChatId(message["peer_id"].asInt()),
-											"from_id" to message["from_id"].asInt(),
-											"date" to message["date"].asLong(),
-											"id_local" to message["conversation_message_id"].asInt()
-									)
+								IrisJsonObject(
+									"user_id" to message["action"]["member_id"],
+									"chat_id" to JsonProxyValue(peer2ChatId(message["peer_id"].asInt())),
+									"from_id" to message["from_id"],
+									"date" to message["date"],
+									"conversation_message_id" to message["conversation_message_id"]
+								)
 							))
 						}
 						"chat_title_update" -> {
@@ -65,25 +70,25 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 						"chat_invite_user_by_link" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
 							checkInvites.add(VkMessage(
-									JsonProxyObject(
-											"user_id" to message["from_id"].asInt(),
-											"chat_id" to peer2ChatId(message["peer_id"].asInt()),
-											"from_id" to message["from_id"].asInt(),
-											"date" to message["date"].asInt(),
-											"id_local" to message["conversation_message_id"].asInt()
-									)
+								IrisJsonObject(
+									"user_id" to message["action"]["member_id"],
+									"chat_id" to JsonProxyValue(peer2ChatId(message["peer_id"].asInt())),
+									"from_id" to message["from_id"],
+									"date" to message["date"],
+									"conversation_message_id" to message["conversation_message_id"]
+								)
 							))
 						}
 						"chat_kick_user" -> {
 							if (checkLeave == null) checkLeave = mutableListOf()
 							checkLeave.add(VkMessage(
-									JsonProxyObject(
-											"user_id" to message["action"]["member_id"].asInt(),
-											"chat_id" to peer2ChatId(message["peer_id"].asInt()),
-											"from_id" to message["from_id"].asInt(),
-											"date" to message["date"].asLong(),
-											"id_local" to message["conversation_message_id"].asInt()
-									)
+								IrisJsonObject(
+									"user_id" to message["action"]["member_id"],
+									"chat_id" to JsonProxyValue(peer2ChatId(message["peer_id"].asInt())),
+									"from_id" to message["from_id"],
+									"date" to message["date"],
+									"conversation_message_id" to message["conversation_message_id"]
+								)
 							))
 						}
 						"chat_pin_message" -> {

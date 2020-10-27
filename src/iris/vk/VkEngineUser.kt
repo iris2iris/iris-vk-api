@@ -7,7 +7,6 @@ import iris.json.JsonObject
 import iris.json.flow.JsonFlowParser
 import iris.json.plain.IrisJsonArray
 import iris.json.plain.IrisJsonObject
-import iris.json.proxy.JsonProxyObject
 import iris.json.proxy.JsonProxyString
 import iris.json.proxy.JsonProxyValue
 import iris.vk.VkApi.LongPollSettings
@@ -46,7 +45,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 
 		var lastTs = longPoll["response"]["ts"].asString()
 		val accessMode = (2 + 8).toString()
-		var longPollSettings = LongPollSettings("https://" + longPoll["response"]["server"].asString(), longPoll["response"]["key"].asString(), accessMode)
+		var longPollSettings = getLongPollSettings(longPoll["response"]["server"].asString(), longPoll["response"]["key"].asString(), accessMode)
 		loop@ while (this.workStatus)  {
 			val updates = getUpdates(longPollSettings, lastTs)
 
@@ -63,7 +62,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 					return
 				}
 				val response = longPoll["response"]
-				longPollSettings = LongPollSettings("https://" + response["server"].asString(), response["key"].asString(), accessMode)
+				longPollSettings = getLongPollSettings(response["server"].asString(), response["key"].asString(), accessMode)
 				lastTs = response["ts"].asString()
 				continue
 			}
@@ -87,7 +86,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 							}
 
 							val response = longPoll["response"]
-							longPollSettings = LongPollSettings("https://" + response["server"].asString(), response["key"].asString(), accessMode)
+							longPollSettings = getLongPollSettings(response["server"].asString(), response["key"].asString(), accessMode)
 							lastTs = longPoll["response"]["ts"].asString()
 							continue@loop
 						} 1 -> { // обновляем TS
@@ -108,7 +107,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 							}
 
 							val response = longPoll["response"]
-							longPollSettings = LongPollSettings("https://" + response["server"].asString(), response["key"].asString(), accessMode)
+							longPollSettings = getLongPollSettings(response["server"].asString(), response["key"].asString(), accessMode)
 							lastTs = response["ts"].asString()
 							continue@loop
 						} else -> {
@@ -136,6 +135,10 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 		}
 	}
 
+	protected open fun getLongPollSettings(server: String, key: String, accessMode: String): LongPollSettings {
+		return LongPollSettings("https://$server", key, accessMode)
+	}
+
 	protected open fun getLongPollServer(): JsonItem? {
 		return vkApi.messages.getLongPollServer()
 	}
@@ -161,33 +164,29 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 				if (update[7]["source_act"].isNull()) {
 					when (update[7]["source_act"].asStringOrNull()) {
 						"chat_invite_user" -> checkInvites += VkMessage(
-							JsonProxyObject(
-								"user_id" to update[7]["source_mid"].asInt(),
-								"chat_id" to VkApi.peer2ChatId(update[3].asInt()),
-								"from_id" to update[7]["from"].asInt()
-							)
-						)
+							IrisJsonObject(
+								"user_id" to update[7]["source_mid"],
+								"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
+								"from_id" to update[7]["from"]
+							))
 						"chat_title_update" -> titleUpdaters += VkMessage(
-							JsonProxyObject(
-								"user_id" to update[7]["source_mid"].asInt(),
-								"chat_id" to VkApi.peer2ChatId(update[3].asInt()),
-								"from_id" to update[7]["from"].asInt()
-							)
-						)
+							IrisJsonObject(
+								"user_id" to update[7]["source_mid"],
+								"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
+								"from_id" to update[7]["from"]
+							))
 						"chat_invite_user_by_link" -> checkInvites += VkMessage(
-							JsonProxyObject(
-								"user_id" to update[7]["from"].asInt(),
-								"chat_id" to VkApi.peer2ChatId(update[3].asInt()),
-								"from_id" to update[7]["from"].asInt()
-							)
-						)
+							IrisJsonObject(
+								"user_id" to update[7]["from"],
+								"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
+								"from_id" to update[7]["from"]
+							))
 						"chat_kick_user" -> checkLeave += VkMessage(
-							JsonProxyObject(
-								"user_id" to update[7]["source_mid"].asInt(),
-								"chat_id" to VkApi.peer2ChatId(update[3].asInt()),
-								"from_id" to update[7]["from"].asInt()
-							)
-						)
+							IrisJsonObject(
+									"user_id" to update[7]["source_mid"],
+									"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
+									"from_id" to update[7]["from"]
+							))
 						else -> checkMessages += VkMessage(update)
 					}
 				} else {
