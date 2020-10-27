@@ -1,13 +1,19 @@
 package iris.vk
 
 import iris.json.JsonArray
+import iris.json.JsonEntry
 import iris.json.JsonItem
 import iris.json.JsonObject
-import iris.json.plain.IrisJsonParser
+import iris.json.flow.JsonFlowParser
+import iris.json.plain.IrisJsonArray
+import iris.json.plain.IrisJsonObject
 import iris.json.proxy.JsonProxyObject
+import iris.json.proxy.JsonProxyString
+import iris.json.proxy.JsonProxyValue
 import iris.vk.VkApi.LongPollSettings
 import java.util.*
 import java.util.logging.Logger
+import kotlin.collections.ArrayList
 
 /**
  * @created 08.09.2019
@@ -38,7 +44,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 
 		logger.fine("Server received. Starting listening")
 
-		var lastTs = longPoll["response"]["ts"].obj().toString()
+		var lastTs = longPoll["response"]["ts"].asString()
 		val accessMode = (2 + 8).toString()
 		var longPollSettings = LongPollSettings("https://" + longPoll["response"]["server"].asString(), longPoll["response"]["key"].asString(), accessMode)
 		loop@ while (this.workStatus)  {
@@ -57,7 +63,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 					return
 				}
 				val response = longPoll["response"]
-				longPollSettings = LongPollSettings(response["server"].asString(), response["key"].asString(), accessMode)
+				longPollSettings = LongPollSettings("https://" + response["server"].asString(), response["key"].asString(), accessMode)
 				lastTs = response["ts"].asString()
 				continue
 			}
@@ -81,7 +87,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 							}
 
 							val response = longPoll["response"]
-							longPollSettings = LongPollSettings(response["server"].asString(), response["key"].asString(), accessMode)
+							longPollSettings = LongPollSettings("https://" + response["server"].asString(), response["key"].asString(), accessMode)
 							lastTs = longPoll["response"]["ts"].asString()
 							continue@loop
 						} 1 -> { // обновляем TS
@@ -102,7 +108,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 							}
 
 							val response = longPoll["response"]
-							longPollSettings = LongPollSettings(response["server"].asString(), response["key"].asString(), accessMode)
+							longPollSettings = LongPollSettings("https://" + response["server"].asString(), response["key"].asString(), accessMode)
 							lastTs = response["ts"].asString()
 							continue@loop
 						} else -> {
@@ -125,7 +131,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 					return
 				}
 			}
-			lastTs = updates["ts"].obj().toString()
+			lastTs = updates["ts"].asString()
 			processUpdates(updates["updates"] as JsonArray)
 		}
 	}
@@ -228,7 +234,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 	}
 
 	private fun convertMessages(messages: List<VkMessage>): List<VkMessage> {
-		val ret = mutableListOf<VkMessage>()
+		val ret = ArrayList<VkMessage>(messages.size)
 		val messageIds = mutableListOf<Int>()
 		var needExtend = false
 
@@ -244,74 +250,73 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 		if (needExtend) {
 			val req = this.vkApi.messages.getById(messageIds)
 			if (req != null) {
-				val res = req["response"]["items"].asList()
+				val res = req["response"]["items"] as JsonArray
 				for (r in res) {
-					val d = JsonProxyObject(r as Map<String, Any?>)
-					ret += VkMessage(d)
+					ret += VkMessage(r)
 				}
 			}
 		} else {
 
 			for (m in messages) {
 				val m = m.source
-				val peerId = m[3].asInt()
+				val peerIdObj = m[3]
+				val peerId = peerIdObj.asInt()
 				val chatId = VkApi.peer2ChatId(peerId)
-				val fromId: Int
-				if (chatId > 0) {
-					fromId = m[7]["from"].asString().toInt()
+				val fromId = if (chatId > 0) {
+					JsonProxyValue(m[7]["from"].asString().toInt())
 				} else {
-					fromId = peerId
+					peerIdObj
 				}
-				val t = mutableMapOf<String, Any?>(
-					"id" to m[1].asInt(),
-					"chat_id" to chatId,
-					"peer_id" to peerId,
-					"from_id" to fromId,
-					"text" to m[6].asString(),
-					"command" to "",
-					"isToBot" to false,
-					"date" to m[4].asLong()
-				)
+
+				val t = IrisJsonObject(mutableListOf(
+						"id" to m[1],
+						"chat_id" to JsonProxyValue(chatId),
+						"peer_id" to peerIdObj,
+						"from_id" to fromId,
+						"text" to m[6],
+						"date" to m[4]
+				))
 
 				if (m[7].isNotNull()) {
 
 					val m7 = m[7] as JsonObject
 
 					val attachmentsFull = m7["attachments"]
-					val attachments = if (attachmentsFull.isNull()) {
-						val attachments = mutableListOf<MutableMap<String, Any?>?>()
+					val attachments = (if (attachmentsFull.isNull()) {
+						val attachments = LinkedList<MutableMap<String, JsonItem>>()
 						for (el in m7) {
 							val key = el.first
-							val addValue = el.second
 							if (!key.startsWith("attach")) continue
+							val addValue = el.second
 							val data = key.split("_")
 							val num = data[0].substring("attach".length).toInt() - 1
 							if (num + 1 > attachments.size) {
 								extendCapacity(attachments as MutableList<Any?>, num + 1)
-								attachments[num] = mutableMapOf<String, Any?>()
+								attachments[num] = mutableMapOf()
 							}
 							val addKey = if (data.size > 1) data[1] else "id"
-							attachments[num]!![addKey] = addValue.obj()
+							attachments[num][addKey] = addValue
 						}
-						attachments
+						IrisJsonArray(attachments.map { IrisJsonObject(it.toList()) })
 					} else {
-						IrisJsonParser(attachmentsFull.asString()).parse().asList() as List<MutableMap<String, Any?>>
-					}
+						JsonFlowParser.start(attachmentsFull.asString()) as JsonArray
+					}).getList() as Collection<JsonObject>
 
 					if (attachments.isNotEmpty()) {
-						val resAttachments = ArrayList<Map<String, Any?>>(attachments.size)
+						val resAttachments = ArrayList<JsonItem>(attachments.size)
 						for (a in attachments) {
-							if (a == null) continue
-							val type: String? = a.remove("type") as String?
+							val entries = (a.getEntries() as MutableCollection<JsonEntry>)
+							var type: String? = null
+							if (!entries.removeIf { if (it.first == "type") {type = it.second.asString(); true} else false }) continue
 							if (type != null) {
-								resAttachments.add(mapOf("type" to type, type to a))
+								resAttachments.add(IrisJsonObject(listOf("type" to JsonProxyString(type), type!! to a)))
 							}
 						}
 						if (resAttachments.size > 0)
-							t["attachments"] = resAttachments
+							t["attachments"] = IrisJsonArray(resAttachments)
 					}
 				}
-				ret += VkMessage(JsonProxyObject("message" to t))
+				ret += VkMessage(IrisJsonObject("message" to t))
 			}
 		}
 		return ret
