@@ -152,57 +152,74 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 	}
 
 	open fun processUpdates(updates: JsonArray) {
-		val checkMessages = mutableListOf<VkMessage>()
-		val checkInvites = mutableListOf<VkMessage>()
-		val titleUpdaters = mutableListOf<VkMessage>()
-		val pinUpdaters = mutableListOf<VkMessage>()
-		val checkLeave = mutableListOf<VkMessage>()
+		var checkMessages: LinkedList<JsonArray>? = null
+		var checkInvites: LinkedList<VkMessage>? = null
+		var titleUpdaters: LinkedList<VkMessage>? = null
+		val pinUpdaters: LinkedList<VkMessage>? = null
+		var checkLeave: LinkedList<VkMessage>? = null
 
 		for (update in updates) {
 			if (!update.isArray()) continue
+			update as JsonArray
 			if (update[0].asLong() == 4L) { // это сообщение
 				if (update[7]["source_act"].isNull()) {
 					when (update[7]["source_act"].asStringOrNull()) {
-						"chat_invite_user" -> checkInvites += VkMessage(
-							IrisJsonObject(
-								"user_id" to update[7]["source_mid"],
-								"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
-								"from_id" to update[7]["from"]
-							))
-						"chat_title_update" -> titleUpdaters += VkMessage(
-							IrisJsonObject(
-								"user_id" to update[7]["source_mid"],
-								"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
-								"from_id" to update[7]["from"]
-							))
-						"chat_invite_user_by_link" -> checkInvites += VkMessage(
-							IrisJsonObject(
-								"user_id" to update[7]["from"],
-								"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
-								"from_id" to update[7]["from"]
-							))
-						"chat_kick_user" -> checkLeave += VkMessage(
-							IrisJsonObject(
-									"user_id" to update[7]["source_mid"],
-									"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
-									"from_id" to update[7]["from"]
-							))
-						else -> checkMessages += VkMessage(update)
+						"chat_invite_user" -> {
+							if (checkInvites == null) checkInvites = mutableListOf()
+							checkInvites!! += VkMessage(
+								IrisJsonObject(
+										"user_id" to update[7]["source_mid"],
+										"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
+										"from_id" to update[7]["from"]
+								))
+						}
+						"chat_title_update" -> {
+							if (titleUpdaters == null) titleUpdaters = mutableListOf()
+							titleUpdaters!! += VkMessage(
+								IrisJsonObject(
+										"user_id" to update[7]["source_mid"],
+										"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
+										"from_id" to update[7]["from"]
+								))
+						}
+						"chat_invite_user_by_link" -> {
+							if (checkInvites == null) checkInvites = mutableListOf()
+							checkInvites!! += VkMessage(
+								IrisJsonObject(
+										"user_id" to update[7]["from"],
+										"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
+										"from_id" to update[7]["from"]
+								))
+						}
+						"chat_kick_user" -> {
+							if (checkLeave == null) checkLeave = mutableListOf()
+							checkLeave!! += VkMessage(
+								IrisJsonObject(
+										"user_id" to update[7]["source_mid"],
+										"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
+										"from_id" to update[7]["from"]
+								))
+						}
+						else -> {
+							if (checkMessages == null) checkMessages = mutableListOf()
+							checkMessages!! += update
+						}
 					}
 				} else {
-					checkMessages += VkMessage(update)
+					if (checkMessages == null) checkMessages = mutableListOf()
+					checkMessages!! += update
 				}
 			}
 		}
-		if (checkMessages.isNotEmpty())
+		if (checkMessages != null)
 			processMessages(this.convertMessages(checkMessages))
-		if (checkInvites.isNotEmpty())
+		if (checkInvites != null)
 			this.processInvites(checkInvites)
-		if (titleUpdaters.isNotEmpty())
+		if (titleUpdaters != null)
 			this.processTitleUpdates(titleUpdaters)
-		if (pinUpdaters.isNotEmpty())
+		if (pinUpdaters != null)
 			this.processPinUpdates(pinUpdaters)
-		if (checkLeave.isNotEmpty())
+		if (checkLeave != null)
 			this.processLeaves(checkLeave)
 	}
 
@@ -232,13 +249,12 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 		this.eventHandler.processLeaves(users)
 	}
 
-	private fun convertMessages(messages: List<VkMessage>): List<VkMessage> {
+	private fun convertMessages(messages: List<JsonArray>): List<VkMessage> {
 		val ret = ArrayList<VkMessage>(messages.size)
 		val messageIds = mutableListOf<Int>()
 		var needExtend = false
 
 		for (m in messages) {
-			val m = m.source
 			messageIds.add(m[1].asInt())
 			if (m[7]["fwd"].isNotNull() || m[7]["attach1_type"].isNotNull() && m[7]["attach1_type"].asString() == "wall") {
 				needExtend = true
@@ -251,13 +267,12 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 			if (req != null) {
 				val res = req["response"]["items"] as JsonArray
 				for (r in res) {
-					ret += VkMessage(r)
+					ret += VkMessage(IrisJsonObject("message" to r))
 				}
 			}
 		} else {
 
 			for (m in messages) {
-				val m = m.source
 				val peerIdObj = m[3]
 				val peerId = peerIdObj.asInt()
 				val chatId = VkApi.peer2ChatId(peerId)

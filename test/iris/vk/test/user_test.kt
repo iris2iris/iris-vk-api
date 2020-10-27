@@ -32,11 +32,11 @@ fun main() {
 				println("Команда пинг получена")
 
 				// Шлём ответ
-				vk.messages.send(messageItem["from_id"].asInt(), "ПОНГ")
+				vk.messages.send(message.peerId, "ПОНГ")
 			}
-			val attachments = messageItem["attachments"]
-			if (attachments.isNotNull())
-				println("	Attachment: " + attachments.obj())
+			val attachments = message.attachments
+			if (!attachments.isNullOrEmpty())
+				println("	Attachment: $attachments")
 		}
 	}
 
