@@ -1,26 +1,22 @@
 package iris.vk
 
 import iris.json.JsonArray
-import iris.json.JsonEntry
 import iris.json.JsonItem
-import iris.json.JsonObject
-import iris.json.flow.JsonFlowParser
-import iris.json.plain.IrisJsonArray
-import iris.json.plain.IrisJsonObject
-import iris.json.proxy.JsonProxyString
-import iris.json.proxy.JsonProxyValue
 import iris.vk.VkApi.LongPollSettings
+import iris.vk.event.*
+import iris.vk.event.user.UserChatEvent
+import iris.vk.event.user.UserMessage
+import iris.vk.event.user.UserPinUpdate
+import iris.vk.event.user.UserTitleUpdate
 import java.util.*
 import java.util.logging.Logger
-import kotlin.collections.ArrayList
 
 /**
  * @created 08.09.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 
-// TODO: Проверить
-open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
+open class VkEngineUser(val vkApi: VkApi, private val eventHandler: VkHandler) {
 
 	constructor(token: String, eventHandler: VkHandler) : this(VkApi(token), eventHandler)
 
@@ -117,8 +113,8 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 					}
 
 				} else if (!updates["error"].isNull()) {
-					if (updates["error"]["error_msg"].asString() == "User authorization failed: access_token has expired."
-						|| updates["error"]["error_code"].asInt() == VK_BOT_ERROR_WRONG_TOKEN
+					if (updates["error"]["error_code"].asInt() == VK_BOT_ERROR_WRONG_TOKEN
+						|| updates["error"]["error_msg"].asString() == "User authorization failed: access_token has expired."
 					) {
 						logger.warning("Нет токена?")
 						return
@@ -152,11 +148,11 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 	}
 
 	open fun processUpdates(updates: JsonArray) {
-		var checkMessages: LinkedList<JsonArray>? = null
-		var checkInvites: LinkedList<VkMessage>? = null
-		var titleUpdaters: LinkedList<VkMessage>? = null
-		val pinUpdaters: LinkedList<VkMessage>? = null
-		var checkLeave: LinkedList<VkMessage>? = null
+		var checkMessages: LinkedList<JsonItem>? = null
+		var checkInvites: LinkedList<UserChatEvent>? = null
+		var checkLeave: LinkedList<UserChatEvent>? = null
+		var titleUpdaters: LinkedList<UserTitleUpdate>? = null
+		val pinUpdaters: LinkedList<UserPinUpdate>? = null
 
 		for (update in updates) {
 			if (!update.isArray()) continue
@@ -166,53 +162,35 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 					when (update[7]["source_act"].asStringOrNull()) {
 						"chat_invite_user" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += VkMessage(
-								IrisJsonObject(
-										"user_id" to update[7]["source_mid"],
-										"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
-										"from_id" to update[7]["from"]
-								))
+							checkInvites!! += UserChatEvent(update)
 						}
 						"chat_title_update" -> {
 							if (titleUpdaters == null) titleUpdaters = mutableListOf()
-							titleUpdaters!! += VkMessage(
-								IrisJsonObject(
-										"user_id" to update[7]["source_mid"],
-										"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
-										"from_id" to update[7]["from"]
-								))
+							titleUpdaters!! += UserTitleUpdate(update)
 						}
 						"chat_invite_user_by_link" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += VkMessage(
-								IrisJsonObject(
-										"user_id" to update[7]["from"],
-										"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
-										"from_id" to update[7]["from"]
-								))
+							checkInvites!! += UserChatEvent(update)
 						}
 						"chat_kick_user" -> {
 							if (checkLeave == null) checkLeave = mutableListOf()
-							checkLeave!! += VkMessage(
-								IrisJsonObject(
-										"user_id" to update[7]["source_mid"],
-										"chat_id" to JsonProxyValue(VkApi.peer2ChatId(update[3].asInt())),
-										"from_id" to update[7]["from"]
-								))
+							checkLeave!! += UserChatEvent(update)
 						}
 						else -> {
 							if (checkMessages == null) checkMessages = mutableListOf()
-							checkMessages!! += update
+							checkMessages.add(update)
 						}
 					}
 				} else {
 					if (checkMessages == null) checkMessages = mutableListOf()
-					checkMessages!! += update
+					checkMessages.add(update)
 				}
 			}
 		}
-		if (checkMessages != null)
-			processMessages(this.convertMessages(checkMessages))
+		if (checkMessages != null) {
+			val source = ApiSource(checkMessages)
+			processMessages(checkMessages.map { UserMessage(source, it) })
+		}
 		if (checkInvites != null)
 			this.processInvites(checkInvites)
 		if (titleUpdaters != null)
@@ -223,40 +201,68 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 			this.processLeaves(checkLeave)
 	}
 
+	private inner class ApiSource(messages: List<JsonItem>) : UserMessage.ApiSource {
+
+		private val map: Map<Int, JsonItem> by lazy(LazyThreadSafetyMode.NONE) {
+			val ids = messages.map { it[1].asInt() }
+			val result = vkApi.messages.getById(ids)?: return@lazy emptyMap()
+			if (VkApi.isError(result))
+				return@lazy emptyMap()
+			val items = result["response"]["items"] as JsonArray
+			items.associateBy { it["id"].asInt() }
+		}
+
+		private fun getDirect(id: Int): JsonItem? {
+			val result = vkApi.messages.getById(listOf(id))?: return null
+			if (VkApi.isError(result))
+				return null
+			val items = result["response"]["items"] as JsonArray
+			return items.firstOrNull()
+		}
+
+		override fun getFullMessage(messageId: Int): JsonItem? {
+			return map[messageId] ?: getDirect(messageId)
+		}
+	}
+
 	private inline fun <E>mutableListOf() = LinkedList<E>()
 
-	fun processMessages(messages: List<VkMessage>) {
+	fun processMessages(messages: List<Message>) {
 		this.eventHandler.processMessages(messages)
 	}
 
-	fun processEditMessages(messages: List<VkMessage>) {
+	fun processEditMessages(messages: List<Message>) {
 		this.eventHandler.processEditedMessages(messages)
 	}
 
-	fun processInvites(invites: List<VkMessage>) {
+	fun processInvites(invites: List<ChatEvent>) {
 		this.eventHandler.processInvites(invites)
 	}
 
-	fun processTitleUpdates(updaters: List<VkMessage>) {
+	fun processTitleUpdates(updaters: List<TitleUpdate>) {
 		this.eventHandler.processTitleUpdates(updaters)
 	}
 
-	fun processPinUpdates(updaters: List<VkMessage>) {
+	fun processPinUpdates(updaters: List<PinUpdate>) {
 		this.eventHandler.processPinUpdates(updaters)
 	}
 
-	fun processLeaves(users: List<VkMessage>) {
+	fun processLeaves(users: List<ChatEvent>) {
 		this.eventHandler.processLeaves(users)
 	}
 
-	private fun convertMessages(messages: List<JsonArray>): List<VkMessage> {
-		val ret = ArrayList<VkMessage>(messages.size)
+	fun processCallbacks(callbacks: List<CallbackEvent>) {
+		this.eventHandler.processCallbacks(callbacks)
+	}
+
+	/*private fun convertMessages(messages: List<JsonArray>): List<UserMessage> {
+		val ret = ArrayList<UserMessage>(messages.size)
 		val messageIds = mutableListOf<Int>()
 		var needExtend = false
 
 		for (m in messages) {
 			messageIds.add(m[1].asInt())
-			if (m[7]["fwd"].isNotNull() || m[7]["attach1_type"].isNotNull() && m[7]["attach1_type"].asString() == "wall") {
+			if (m[7]["fwd"].isNotNull() || m[7]["attach1_type"].asStringOrNull() == "wall") {
 				needExtend = true
 				break
 			}
@@ -267,7 +273,7 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 			if (req != null) {
 				val res = req["response"]["items"] as JsonArray
 				for (r in res) {
-					ret += VkMessage(IrisJsonObject("message" to r))
+					ret += UserMessage(IrisJsonObject("message" to r))
 				}
 			}
 		} else {
@@ -330,19 +336,19 @@ open class VkEngineUser(val vkApi: VkApi, val eventHandler: VkHandler) {
 							t["attachments"] = IrisJsonArray(resAttachments)
 					}
 				}
-				ret += VkMessage(IrisJsonObject("message" to t))
+				ret += UserMessage(IrisJsonObject("message" to t))
 			}
 		}
 		return ret
-	}
+	}*/
 
-	private fun extendCapacity(array: MutableList<Any?>, newCapacity: Int) {
+	/*private fun extendCapacity(array: MutableList<Any?>, newCapacity: Int) {
 		if (newCapacity > array.size) {
 			for (i in array.size until newCapacity) {
 				array.add(null)
 			}
 		}
-	}
+	}*/
 }
 
 

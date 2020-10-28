@@ -1,6 +1,7 @@
 package iris.vk.test
 
 import iris.vk.*
+import iris.vk.event.Message
 import kotlin.system.exitProcess
 
 /**
@@ -19,7 +20,7 @@ fun main() {
 	// Определяем простой обработчик событий
 	val simpleMessageHandler = object : VkHandlerAdapter() {
 
-		override fun processMessage(message: VkMessage) {
+		override fun processMessage(message: Message) {
 			// message содержит информацию о полученном JsonItem (message.source) и вспомогательную информацию, которую
 			// добавит сам программист по мере продвижения события (message.options)
 
@@ -27,16 +28,17 @@ fun main() {
 			val text = message.text
 			println("Получено сообщение: $text")
 
-			val messageItem = message.source["message"]
 			if (text =="пинг") {
 				println("Команда пинг получена")
-
 				// Шлём ответ
 				vk.messages.send(message.peerId, "ПОНГ")
 			}
 			val attachments = message.attachments
 			if (!attachments.isNullOrEmpty())
-				println("	Attachment: $attachments")
+				println("	Attachment: ${attachments.joinToString { it.obj().toString() }}")
+			val forwardedMessages = message.forwardedMessages
+			if (!forwardedMessages.isNullOrEmpty())
+				println("	Forwarded: ${forwardedMessages.joinToString { it.obj().toString() }}")
 		}
 	}
 

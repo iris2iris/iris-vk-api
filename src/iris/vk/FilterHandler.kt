@@ -2,12 +2,14 @@
 
 package iris.vk
 
+import iris.vk.event.*
+
 /**
  * @created 20.09.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 class VkFilterHandler(private val filters: Array<VkEventFilter>, private val handler: VkHandler) : VkHandler {
-	override fun processMessages(messages: List<VkMessage>) {
+	override fun processMessages(messages: List<Message>) {
 		var messages = messages
 		for (i in filters) {
 			messages = i.filterMessages(messages)
@@ -18,7 +20,7 @@ class VkFilterHandler(private val filters: Array<VkEventFilter>, private val han
 			handler.processMessages(messages)
 	}
 
-	override fun processInvites(invites: List<VkMessage>) {
+	override fun processInvites(invites: List<ChatEvent>) {
 		var invites = invites
 		for (i in filters) {
 			invites = i.filterInvites(invites)
@@ -29,7 +31,7 @@ class VkFilterHandler(private val filters: Array<VkEventFilter>, private val han
 			handler.processInvites(invites)
 	}
 
-	override fun processTitleUpdates(updaters: List<VkMessage>) {
+	override fun processTitleUpdates(updaters: List<TitleUpdate>) {
 		var updaters = updaters
 		for (i in filters) {
 			updaters = i.filterTitleUpdates(updaters)
@@ -40,11 +42,11 @@ class VkFilterHandler(private val filters: Array<VkEventFilter>, private val han
 			handler.processTitleUpdates(updaters)
 	}
 
-	override fun processPinUpdates(updaters: List<VkMessage>) {
+	override fun processPinUpdates(updaters: List<PinUpdate>) {
 		handler.processPinUpdates(updaters)
 	}
 
-	override fun processLeaves(leaves: List<VkMessage>) {
+	override fun processLeaves(leaves: List<ChatEvent>) {
 		var leaves = leaves
 		for (i in filters) {
 			leaves = i.filterLeaves(leaves)
@@ -55,11 +57,11 @@ class VkFilterHandler(private val filters: Array<VkEventFilter>, private val han
 			handler.processLeaves(leaves)
 	}
 
-	override fun processEditedMessages(messages: List<VkMessage>) {
+	override fun processEditedMessages(messages: List<Message>) {
 		handler.processEditedMessages(messages)
 	}
 
-	override fun processCallbacks(callbacks: List<VkMessage>) {
+	override fun processCallbacks(callbacks: List<CallbackEvent>) {
 		var updaters = callbacks
 		for (i in filters) {
 			updaters = i.filterCallbacks(updaters)

@@ -3,7 +3,8 @@ package iris.vk.test
 import iris.vk.VkApiPack
 import iris.vk.VkEngineGroup
 import iris.vk.VkHandlerAdapter
-import iris.vk.VkMessage
+import iris.vk.event.CallbackEvent
+import iris.vk.event.Message
 import kotlin.system.exitProcess
 
 /**
@@ -22,7 +23,7 @@ fun main() {
 	// Определяем простой обработчик событий
 	val simpleMessageHandler = object : VkHandlerAdapter() {
 
-		override fun processMessage(message: VkMessage) {
+		override fun processMessage(message: Message) {
 			// message содержит информацию о полученном JsonItem (message.source) и вспомогательную информацию, которую
 			// добавит сам программист по мере продвижения события (message.options)
 
@@ -36,6 +37,12 @@ fun main() {
 
 				// Шлём ответ
 				vk.messages.send(messageItem["from_id"].asInt(), "ПОНГ")
+			}
+		}
+
+		override fun processCallbacks(callbacks: List<CallbackEvent>) {
+			for (callback in callbacks) {
+				println("Получено callback-событие: ${callback.eventId} payload=${callback.payload}")
 			}
 		}
 	}

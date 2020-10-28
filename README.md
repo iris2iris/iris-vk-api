@@ -10,7 +10,7 @@
 ##### Прямая ссылка:
 
 - Вы можете скачать [подготовленные релизы](https://github.com/iris2iris/iris-vk-api/releases), чтобы скачать JAR файл напрямую.
-- Также вам необходимо скачать зависимость — JAR файл [Iris JSON Parser](https://github.com/iris2iris/iris-vk-api/releases/download/v0.1.1/iris-json-parser.jar)
+- Также вам необходимо скачать зависимость — JAR файл [Iris JSON Parser](https://github.com/iris2iris/iris-vk-api/releases/download/v0.2/iris-json-parser.jar)
 
 ## Как это использовать
 
@@ -73,7 +73,7 @@ val vk = VkApiPack(token)
 // Определяем простой обработчик событий
 val simpleMessageHandler = object : VkHandlerAdapter() {
 
-    override fun processMessage(message: VkMessage) {
+    override fun processMessage(message: Message) {
         // message содержит информацию о полученном JsonItem (message.source) и вспомогательную информацию, которую
         // добавит сам программист по мере продвижения события (message.options)
 

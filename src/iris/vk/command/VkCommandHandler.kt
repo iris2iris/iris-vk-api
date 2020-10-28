@@ -1,7 +1,7 @@
 package iris.vk.command
 
 import iris.vk.VkHandlerAdapter
-import iris.vk.VkMessage
+import iris.vk.event.Message
 
 /**
  * @created 27.10.2020
@@ -27,6 +27,10 @@ open class VkCommandHandler(
 		add(command.second, command.first.toCharArray())
 	}
 
+	open fun add(command: CommandWithHash): VkCommandHandler {
+		return add(command, command.hashChars())
+	}
+
 	open fun add(command: Command, chars: CharArray?): VkCommandHandler {
 		if (chars == null)
 			map.getOrPut(NULL_CHAR) { mutableListOf() }.add(command)
@@ -40,8 +44,8 @@ open class VkCommandHandler(
 		private const val NULL_CHAR = '\u0000'
 	}
 
-	override fun processMessage(message: VkMessage) {
-		val command = commandBuilder.extractCommand(message)?: return
+	override fun processMessage(message: Message) {
+		val command = commandBuilder.buildCommand(message)?: return
 		if (command.isEmpty()) return
 		val hash = command[0]
 		var hashItems = map[hash]

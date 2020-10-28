@@ -2,36 +2,38 @@
 
 package iris.vk
 
+import iris.vk.event.*
+
 /**
  * @created 20.09.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 interface VkEventFilter {
-	fun filterInvites(invites: List<VkMessage>): List<VkMessage>
-	fun filterLeaves(leaves: List<VkMessage>): List<VkMessage>
-	fun filterMessages(messages: List<VkMessage>): List<VkMessage>
-	fun filterTitleUpdates(updaters: List<VkMessage>): List<VkMessage>
-	fun filterCallbacks(callbacks: List<VkMessage>): List<VkMessage>
+	fun filterInvites(invites: List<ChatEvent>): List<ChatEvent>
+	fun filterLeaves(leaves: List<ChatEvent>): List<ChatEvent>
+	fun filterMessages(messages: List<Message>): List<Message>
+	fun filterTitleUpdates(updaters: List<TitleUpdate>): List<TitleUpdate>
+	fun filterCallbacks(callbacks: List<CallbackEvent>): List<CallbackEvent>
 }
 
 open class VkEventFilterAdapter : VkEventFilter {
-	override fun filterInvites(invites: List<VkMessage>): List<VkMessage> {
+	override fun filterInvites(invites: List<ChatEvent>): List<ChatEvent> {
 		return invites
 	}
 
-	override fun filterMessages(messages: List<VkMessage>): List<VkMessage> {
-		return messages
-	}
-
-	override fun filterLeaves(leaves: List<VkMessage>): List<VkMessage> {
+	override fun filterLeaves(leaves: List<ChatEvent>): List<ChatEvent> {
 		return leaves
 	}
 
-	override fun filterTitleUpdates(updaters: List<VkMessage>): List<VkMessage> {
+	override fun filterMessages(messages: List<Message>): List<Message> {
+		return messages
+	}
+
+	override fun filterTitleUpdates(updaters: List<TitleUpdate>): List<TitleUpdate> {
 		return updaters
 	}
 
-	override fun filterCallbacks(callbacks: List<VkMessage>): List<VkMessage> {
+	override fun filterCallbacks(callbacks: List<CallbackEvent>): List<CallbackEvent> {
 		return callbacks
 	}
 }

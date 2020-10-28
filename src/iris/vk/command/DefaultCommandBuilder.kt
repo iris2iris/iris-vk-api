@@ -1,6 +1,6 @@
 package iris.vk.command
 
-import iris.vk.VkMessage
+import iris.vk.event.Message
 
 /**
  * @created 27.10.2020
@@ -8,7 +8,7 @@ import iris.vk.VkMessage
  */
 class DefaultCommandBuilder(private val prefixes: String?) : CommandBuilder {
 
-	override fun extractCommand(message: VkMessage): String? {
+	override fun buildCommand(message: Message): String? {
 		val text = message.text ?: return null
 		if (text.isEmpty()) return null
 

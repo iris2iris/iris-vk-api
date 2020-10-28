@@ -1,15 +1,17 @@
 package iris.vk
 
+import iris.vk.event.*
+
 /**
  * @created 08.09.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 interface VkHandler {
-	fun processMessages(messages: List<VkMessage>)
-	fun processEditedMessages(messages: List<VkMessage>)
-	fun processInvites(invites:List<VkMessage>)
-	fun processTitleUpdates(updaters:List<VkMessage>)
-	fun processPinUpdates(updaters:List<VkMessage>)
-	fun processLeaves(leaves:List<VkMessage>)
-	fun processCallbacks(callbacks: List<VkMessage>)
+	fun processMessages(messages: List<Message>)
+	fun processEditedMessages(messages: List<Message>)
+	fun processInvites(invites:List<ChatEvent>)
+	fun processLeaves(leaves:List<ChatEvent>)
+	fun processTitleUpdates(updaters:List<TitleUpdate>)
+	fun processPinUpdates(updaters:List<PinUpdate>)
+	fun processCallbacks(callbacks: List<CallbackEvent>)
 }

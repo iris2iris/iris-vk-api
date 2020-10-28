@@ -6,7 +6,10 @@ import iris.json.proxy.JsonProxyValue
 import iris.json.plain.IrisJsonObject
 import iris.vk.VkApi.Companion.peer2ChatId
 import iris.vk.VkApi.LongPollSettings
+import iris.vk.event.*
+import iris.vk.event.group.*
 import java.util.*
+import java.util.logging.Logger
 
 /**
  * @created 08.09.2019
@@ -40,74 +43,54 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 
 	override fun processUpdates(updates: JsonArray) {
 
-		var checkMessages: MutableList<VkMessage>? = null
-		var checkInvites: MutableList<VkMessage>? = null
-		var titleUpdaters: MutableList<VkMessage>? = null
-		var pinUpdaters: MutableList<VkMessage>? = null
-		var checkLeave: MutableList<VkMessage>? = null
+		var checkMessages: MutableList<Message>? = null
+		var checkInvites: MutableList<ChatEvent>? = null
+		var checkLeave: MutableList<ChatEvent>? = null
+		var titleUpdaters: MutableList<TitleUpdate>? = null
+		var pinUpdaters: MutableList<PinUpdate>? = null
+		var checkCallbacks: MutableList<CallbackEvent>? = null// = mutableListOf<stdClass>()
 
 		for (update in updates) {
-			if (update["type"].asString() == "message_new") { // это сообщение
+			val type = update["type"].asString()
+			if (type == "message_new") { // это сообщение
 				val message = update["object"]
 				if (message["action"]["type"].isNotNull()) {
 					when(message["action"]["type"].asString()) {
 						"chat_invite_user" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites.add(VkMessage(
-								IrisJsonObject(
-									"peer_id" to message["peer_id"],
-									"user_id" to message["action"]["member_id"],
-									"chat_id" to JsonProxyValue(peer2ChatId(message["peer_id"].asInt())),
-									"from_id" to message["from_id"],
-									"date" to message["date"],
-									"conversation_message_id" to message["conversation_message_id"]
-								)
-							))
+							checkInvites!! += GroupMessage(message)
 						}
 						"chat_title_update" -> {
 							if (titleUpdaters == null) titleUpdaters = mutableListOf()
-							titleUpdaters.add(VkMessage(message))
+							titleUpdaters!! += GroupTitleUpdate(message)
 						}
 						"chat_invite_user_by_link" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites.add(VkMessage(
-								IrisJsonObject(
-									"peer_id" to message["peer_id"],
-									"user_id" to message["from_id"],
-									"chat_id" to JsonProxyValue(peer2ChatId(message["peer_id"].asInt())),
-									"from_id" to message["from_id"],
-									"date" to message["date"],
-									"conversation_message_id" to message["conversation_message_id"]
-								)
-							))
+							checkInvites!! += GroupChatEvent(message)
 						}
 						"chat_kick_user" -> {
 							if (checkLeave == null) checkLeave = mutableListOf()
-							checkLeave.add(VkMessage(
-								IrisJsonObject(
-									"peer_id" to message["peer_id"],
-									"user_id" to message["action"]["member_id"],
-									"chat_id" to JsonProxyValue(peer2ChatId(message["peer_id"].asInt())),
-									"from_id" to message["from_id"],
-									"date" to message["date"],
-									"conversation_message_id" to message["conversation_message_id"]
-								)
-							))
+							checkLeave!! += GroupChatEvent(message)
 						}
 						"chat_pin_message" -> {
 							if (pinUpdaters == null) pinUpdaters = mutableListOf()
-							pinUpdaters.add(VkMessage(message))
+							pinUpdaters!! += GroupPinUpdate(message)
 						}
 						else -> {
 							if (checkMessages == null) checkMessages = mutableListOf()
-							checkMessages.add(VkMessage(message))
+							checkMessages!! += GroupMessage(message)
 						}
 
 					}
 				} else {
 					if (checkMessages == null) checkMessages = mutableListOf()
-					checkMessages.add(VkMessage(message))
+					checkMessages!! += GroupMessage(message)
 				}
+			} else if (type == "message_event") {
+				if (checkCallbacks == null) checkCallbacks = mutableListOf()
+				checkCallbacks!! += GroupCallbackEvent(update["object"])
+			} else {
+				logger.info("Unknown type of event: $type")
 			}
 		}
 		if (checkMessages != null)
@@ -120,6 +103,8 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 			this.processPinUpdates(pinUpdaters)
 		if (checkLeave != null)
 			this.processLeaves(checkLeave)
+		if (checkCallbacks != null)
+			processCallbacks(checkCallbacks)
 	}
 
 	private inline fun <E>mutableListOf() = LinkedList<E>()
