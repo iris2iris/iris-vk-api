@@ -48,7 +48,7 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 		var checkLeave: MutableList<ChatEvent>? = null
 		var titleUpdaters: MutableList<TitleUpdate>? = null
 		var pinUpdaters: MutableList<PinUpdate>? = null
-		var checkCallbacks: MutableList<CallbackEvent>? = null// = mutableListOf<stdClass>()
+		var checkCallbacks: MutableList<CallbackEvent>? = null
 
 		for (update in updates) {
 			val type = update["type"].asString()

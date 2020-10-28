@@ -249,17 +249,12 @@ open class VkEngineGroupCallback (
 		private fun writeResponse(request: HttpExchange, str: String, rCode: Int = 200) {
 			val bytes = str.toByteArray()
 			request.sendResponseHeaders(rCode, bytes.size.toLong())
-			val os = request.responseBody
-			os.write(bytes)
-			os.close()
+			request.responseBody.use { it.write(bytes) }
 			request.close()
 		}
 
 		private fun getBody(request: HttpExchange): String {
-			val reader = request.requestBody.reader()
-			val res= reader.readText()
-			reader.close()
-			return res
+			return request.requestBody.reader().use { it.readText() }
 		}
 	}
 

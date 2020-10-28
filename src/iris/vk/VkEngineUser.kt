@@ -16,7 +16,7 @@ import java.util.logging.Logger
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 
-open class VkEngineUser(val vkApi: VkApi, private val eventHandler: VkHandler) {
+open class VkEngineUser(protected val vkApi: VkApi, protected val eventHandler: VkHandler) {
 
 	constructor(token: String, eventHandler: VkHandler) : this(VkApi(token), eventHandler)
 
@@ -148,63 +148,67 @@ open class VkEngineUser(val vkApi: VkApi, private val eventHandler: VkHandler) {
 	}
 
 	open fun processUpdates(updates: JsonArray) {
-		var checkMessages: LinkedList<JsonItem>? = null
+		var checkMessages: LinkedList<UserMessage>? = null
 		var checkInvites: LinkedList<UserChatEvent>? = null
 		var checkLeave: LinkedList<UserChatEvent>? = null
 		var titleUpdaters: LinkedList<UserTitleUpdate>? = null
 		val pinUpdaters: LinkedList<UserPinUpdate>? = null
+		var apiSource: ApiSource? = null
 
 		for (update in updates) {
 			if (!update.isArray()) continue
 			update as JsonArray
 			if (update[0].asLong() == 4L) { // это сообщение
-				if (update[7]["source_act"].isNull()) {
-					when (update[7]["source_act"].asStringOrNull()) {
+				val sourceAct = update[7]["source_act"].asStringOrNull()
+				if (apiSource == null) apiSource = ApiSource()
+				apiSource += update[1]
+				if (sourceAct != null) {
+					when (sourceAct) {
 						"chat_invite_user" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += UserChatEvent(update)
+							checkInvites!! += UserChatEvent(apiSource, update)
 						}
 						"chat_title_update" -> {
 							if (titleUpdaters == null) titleUpdaters = mutableListOf()
-							titleUpdaters!! += UserTitleUpdate(update)
+							titleUpdaters!! += UserTitleUpdate(apiSource, update)
 						}
 						"chat_invite_user_by_link" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += UserChatEvent(update)
+							checkInvites!! += UserChatEvent(apiSource, update)
 						}
 						"chat_kick_user" -> {
 							if (checkLeave == null) checkLeave = mutableListOf()
-							checkLeave!! += UserChatEvent(update)
+							checkLeave!! += UserChatEvent(apiSource, update)
 						}
 						else -> {
 							if (checkMessages == null) checkMessages = mutableListOf()
-							checkMessages.add(update)
+							checkMessages!! += UserMessage(apiSource, update)
 						}
 					}
 				} else {
 					if (checkMessages == null) checkMessages = mutableListOf()
-					checkMessages.add(update)
+					checkMessages!! += UserMessage(apiSource, update)
 				}
 			}
 		}
-		if (checkMessages != null) {
-			val source = ApiSource(checkMessages)
-			processMessages(checkMessages.map { UserMessage(source, it) })
-		}
+		if (checkMessages != null)
+			processMessages(checkMessages)
 		if (checkInvites != null)
-			this.processInvites(checkInvites)
+			processInvites(checkInvites)
 		if (titleUpdaters != null)
-			this.processTitleUpdates(titleUpdaters)
+			processTitleUpdates(titleUpdaters)
 		if (pinUpdaters != null)
-			this.processPinUpdates(pinUpdaters)
+			processPinUpdates(pinUpdaters)
 		if (checkLeave != null)
-			this.processLeaves(checkLeave)
+			processLeaves(checkLeave)
 	}
 
-	private inner class ApiSource(messages: List<JsonItem>) : UserMessage.ApiSource {
+	private inner class ApiSource : UserChatEvent.ApiSource {
+
+		val messages = mutableListOf<JsonItem>()
 
 		private val map: Map<Int, JsonItem> by lazy(LazyThreadSafetyMode.NONE) {
-			val ids = messages.map { it[1].asInt() }
+			val ids = messages.map { it.asInt() }
 			val result = vkApi.messages.getById(ids)?: return@lazy emptyMap()
 			if (VkApi.isError(result))
 				return@lazy emptyMap()
@@ -220,8 +224,12 @@ open class VkEngineUser(val vkApi: VkApi, private val eventHandler: VkHandler) {
 			return items.firstOrNull()
 		}
 
-		override fun getFullMessage(messageId: Int): JsonItem? {
+		override fun getFullEvent(messageId: Int): JsonItem? {
 			return map[messageId] ?: getDirect(messageId)
+		}
+
+		operator fun plusAssign(item: JsonItem) {
+			messages += item
 		}
 	}
 
@@ -254,101 +262,6 @@ open class VkEngineUser(val vkApi: VkApi, private val eventHandler: VkHandler) {
 	fun processCallbacks(callbacks: List<CallbackEvent>) {
 		this.eventHandler.processCallbacks(callbacks)
 	}
-
-	/*private fun convertMessages(messages: List<JsonArray>): List<UserMessage> {
-		val ret = ArrayList<UserMessage>(messages.size)
-		val messageIds = mutableListOf<Int>()
-		var needExtend = false
-
-		for (m in messages) {
-			messageIds.add(m[1].asInt())
-			if (m[7]["fwd"].isNotNull() || m[7]["attach1_type"].asStringOrNull() == "wall") {
-				needExtend = true
-				break
-			}
-		}
-
-		if (needExtend) {
-			val req = this.vkApi.messages.getById(messageIds)
-			if (req != null) {
-				val res = req["response"]["items"] as JsonArray
-				for (r in res) {
-					ret += UserMessage(IrisJsonObject("message" to r))
-				}
-			}
-		} else {
-
-			for (m in messages) {
-				val peerIdObj = m[3]
-				val peerId = peerIdObj.asInt()
-				val chatId = VkApi.peer2ChatId(peerId)
-				val fromId = if (chatId > 0) {
-					JsonProxyValue(m[7]["from"].asString().toInt())
-				} else {
-					peerIdObj
-				}
-
-				val t = IrisJsonObject(mutableListOf(
-						"id" to m[1],
-						"chat_id" to JsonProxyValue(chatId),
-						"peer_id" to peerIdObj,
-						"from_id" to fromId,
-						"text" to m[6],
-						"date" to m[4]
-				))
-
-				if (m[7].isNotNull()) {
-
-					val m7 = m[7] as JsonObject
-
-					val attachmentsFull = m7["attachments"]
-					val attachments = (if (attachmentsFull.isNull()) {
-						val attachments = LinkedList<MutableMap<String, JsonItem>>()
-						for (el in m7) {
-							val key = el.first
-							if (!key.startsWith("attach")) continue
-							val addValue = el.second
-							val data = key.split("_")
-							val num = data[0].substring("attach".length).toInt() - 1
-							if (num + 1 > attachments.size) {
-								extendCapacity(attachments as MutableList<Any?>, num + 1)
-								attachments[num] = mutableMapOf()
-							}
-							val addKey = if (data.size > 1) data[1] else "id"
-							attachments[num][addKey] = addValue
-						}
-						IrisJsonArray(attachments.map { IrisJsonObject(it.toList()) })
-					} else {
-						JsonFlowParser.start(attachmentsFull.asString()) as JsonArray
-					}).getList() as Collection<JsonObject>
-
-					if (attachments.isNotEmpty()) {
-						val resAttachments = ArrayList<JsonItem>(attachments.size)
-						for (a in attachments) {
-							val entries = (a.getEntries() as MutableCollection<JsonEntry>)
-							var type: String? = null
-							if (!entries.removeIf { if (it.first == "type") {type = it.second.asString(); true} else false }) continue
-							if (type != null) {
-								resAttachments.add(IrisJsonObject(listOf("type" to JsonProxyString(type), type!! to a)))
-							}
-						}
-						if (resAttachments.size > 0)
-							t["attachments"] = IrisJsonArray(resAttachments)
-					}
-				}
-				ret += UserMessage(IrisJsonObject("message" to t))
-			}
-		}
-		return ret
-	}*/
-
-	/*private fun extendCapacity(array: MutableList<Any?>, newCapacity: Int) {
-		if (newCapacity > array.size) {
-			for (i in array.size until newCapacity) {
-				array.add(null)
-			}
-		}
-	}*/
 }
 
 

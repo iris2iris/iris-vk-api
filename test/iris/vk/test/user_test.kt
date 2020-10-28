@@ -26,7 +26,7 @@ fun main() {
 
 			// message.text — это метод, подготавливает текст для дальнейшей работы
 			val text = message.text
-			println("Получено сообщение: $text")
+			println("Получено сообщение[cid ${message.conversationMessageId}]: $text")
 
 			if (text =="пинг") {
 				println("Команда пинг получена")

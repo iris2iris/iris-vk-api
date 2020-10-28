@@ -8,7 +8,11 @@ import iris.vk.event.ChatEvent
  * @created 28.10.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class UserChatEvent(override val source: JsonItem) : ChatEvent {
+open class UserChatEvent(private val fullItemSource: ApiSource, override val source: JsonItem) : ChatEvent {
+
+	interface ApiSource {
+		fun getFullEvent(messageId: Int): JsonItem?
+	}
 
 	override val id: Int by lazy(LazyThreadSafetyMode.NONE) { source[1].asInt() }
 
@@ -26,9 +30,9 @@ open class UserChatEvent(override val source: JsonItem) : ChatEvent {
 
 	override val date: Long by lazy(LazyThreadSafetyMode.NONE) { source[4].asLong() }
 
-	override val conversationMessageId: Int by lazy(LazyThreadSafetyMode.NONE) { 0
-		// TODO: Понять, а как? А где? Откуда брать?
-	}
+	override val conversationMessageId: Int by lazy(LazyThreadSafetyMode.NONE) { fullItem?.let { it["conversation_message_id"].asInt() }?: 0 }
+
+	protected val fullItem: JsonItem? by lazy { fullItemSource.getFullEvent(id) }
 
 
 }

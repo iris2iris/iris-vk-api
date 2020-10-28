@@ -8,6 +8,6 @@ import iris.vk.event.TitleUpdate
  * @created 28.10.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class UserPinUpdate(source: JsonItem) : UserChatEvent(source), PinUpdate {
+class UserPinUpdate(fullItemSource: ApiSource, source: JsonItem) : UserChatEvent(fullItemSource, source), PinUpdate {
 
 }

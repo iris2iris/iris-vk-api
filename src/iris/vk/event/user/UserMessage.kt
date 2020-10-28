@@ -16,15 +16,9 @@ import kotlin.collections.ArrayList
  * @created 27.09.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class UserMessage(private val fullItemSource: ApiSource, source: JsonItem) : UserChatEvent(source), Message {
-
-	interface ApiSource {
-		fun getFullMessage(messageId: Int): JsonItem?
-	}
+open class UserMessage(fullItemSource: ApiSource, source: JsonItem) : UserChatEvent(fullItemSource, source), Message {
 
 	override val text by lazy(NONE) { source[6].asStringOrNull()?.replace("<br>", "\n") }
-
-	private val fullItem: JsonItem? by lazy { fullItemSource.getFullMessage(id) }
 
 	override val attachments: List<JsonItem>? by lazy(NONE) {
 		val m = source
