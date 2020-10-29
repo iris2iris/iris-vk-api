@@ -2,14 +2,13 @@ package iris.vk
 
 import iris.json.JsonArray
 import iris.json.JsonItem
-import iris.json.proxy.JsonProxyValue
-import iris.json.plain.IrisJsonObject
-import iris.vk.VkApi.Companion.peer2ChatId
-import iris.vk.VkApi.LongPollSettings
+import iris.vk.api.LongPollSettings
+import iris.vk.api.VK_API_VERSION
+import iris.vk.api.VkApis
+import iris.vk.api.simple.VkApi
 import iris.vk.event.*
 import iris.vk.event.group.*
 import java.util.*
-import java.util.logging.Logger
 
 /**
  * @created 08.09.2019
@@ -22,8 +21,8 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 	private val groupId =
 		if (groupId == 0) {
 			val res = commander.groups.getById(emptyList()) ?: throw IllegalStateException("Can't connect to vk.com")
-			if (VkApi.isError(res)) {
-				throw IllegalStateException(VkApi.errorString(res))
+			if (VkApis.isError(res)) {
+				throw IllegalStateException(VkApis.errorString(res))
 			}
 			res["response"][0]["id"].asInt()
 		} else

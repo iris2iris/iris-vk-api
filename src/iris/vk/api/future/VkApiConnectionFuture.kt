@@ -1,6 +1,7 @@
-package iris.vk
+package iris.vk.api.future
 
-import iris.vk.VkApiConnection.VkApiConnectResponse
+import iris.vk.Options
+import iris.vk.api.simple.VkApiConnection.VkApiConnectResponse
 import java.util.concurrent.CompletableFuture
 
 /**

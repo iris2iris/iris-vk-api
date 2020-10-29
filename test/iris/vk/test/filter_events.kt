@@ -1,7 +1,7 @@
 package iris.vk.test
 
 import iris.vk.*
-import iris.vk.command.RegexCommand
+import iris.vk.api.simple.VkApi
 import iris.vk.command.SimpleCommand
 import iris.vk.command.VkCommandHandler
 import iris.vk.event.Message

@@ -1,6 +1,6 @@
 package iris.vk.test
 
-import iris.vk.VkApiFuture
+import iris.vk.api.future.VkApiFuture
 
 /**
  * @created 27.09.2020
@@ -13,7 +13,7 @@ fun main() {
 	val userToId = props.getProperty("userTo.id").toInt()
 
 	val vk = VkApiFuture(token)
-	vk.messages.send(userToId, "Привет. Это сообщение с Kotlin").thenAccept {
+	vk.messages.send(userToId, "Привет. Это сообщение с Kotlin")!!.thenAccept {
 		println("Это сообщение появится вторым")
 		println(it?.obj())
 	}

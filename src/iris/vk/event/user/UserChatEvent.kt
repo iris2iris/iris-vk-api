@@ -1,7 +1,7 @@
 package iris.vk.event.user
 
 import iris.json.JsonItem
-import iris.vk.VkApi
+import iris.vk.api.VkApis
 import iris.vk.event.ChatEvent
 
 /**
@@ -26,7 +26,7 @@ open class UserChatEvent(private val fullItemSource: ApiSource, override val sou
 	}
 
 	override val userId: Int by lazy(LazyThreadSafetyMode.NONE) { source[7]["source_mid"].asIntOrNull()?: 0 }
-	override val chatId: Int by lazy(LazyThreadSafetyMode.NONE) { VkApi.peer2ChatId(peerId) }
+	override val chatId: Int by lazy(LazyThreadSafetyMode.NONE) { VkApis.peer2ChatId(peerId) }
 
 	override val date: Long by lazy(LazyThreadSafetyMode.NONE) { source[4].asLong() }
 

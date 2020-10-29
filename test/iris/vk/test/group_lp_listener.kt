@@ -1,6 +1,6 @@
 package iris.vk.test
 
-import iris.vk.VkApiPack
+import iris.vk.api.future.VkApiPack
 import iris.vk.VkEngineGroup
 import iris.vk.VkHandlerAdapter
 import iris.vk.event.CallbackEvent
@@ -20,23 +20,18 @@ fun main() {
 	// Создаём класс для отправки сообщений
 	val vk = VkApiPack(token)
 
-	// Определяем простой обработчик событий
+	// Определяем обработчик событий
 	val simpleMessageHandler = object : VkHandlerAdapter() {
 
 		override fun processMessage(message: Message) {
-			// message содержит информацию о полученном JsonItem (message.source) и вспомогательную информацию, которую
-			// добавит сам программист по мере продвижения события (message.options)
-
-			// message.text — это метод, подготавливает текст для дальнейшей работы
 			val text = message.text
 			println("Получено сообщение: $text")
 
-			val messageItem = message.source["message"]
 			if (text =="пинг") {
 				println("Команда пинг получена")
 
 				// Шлём ответ
-				vk.messages.send(messageItem["from_id"].asInt(), "ПОНГ")
+				vk.messages.send(message.peerId, "ПОНГ")
 			}
 		}
 

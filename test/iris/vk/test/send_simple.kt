@@ -1,6 +1,7 @@
 package iris.vk.test
 
-import iris.vk.VkApi
+import iris.vk.api.simple.VkApi
+
 
 /**
  * @created 27.09.2020

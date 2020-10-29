@@ -1,8 +1,8 @@
 package iris.vk.test
 
 import iris.vk.*
+import iris.vk.api.future.VkApiPack
 import iris.vk.event.Message
-import kotlin.system.exitProcess
 
 /**
  * @created 26.10.2020

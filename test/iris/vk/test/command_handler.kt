@@ -1,6 +1,6 @@
 package iris.vk.test
 
-import iris.vk.VkApiPack
+import iris.vk.api.future.VkApiPack
 import iris.vk.VkEngineGroup
 import iris.vk.command.VkCommandHandler
 import iris.vk.command.RegexCommand

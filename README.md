@@ -10,7 +10,7 @@
 ##### Прямая ссылка:
 
 - Вы можете скачать [подготовленные релизы](https://github.com/iris2iris/iris-vk-api/releases), чтобы скачать JAR файл напрямую.
-- Также вам необходимо скачать зависимость — JAR файл [Iris JSON Parser](https://github.com/iris2iris/iris-vk-api/releases/download/v0.2/iris-json-parser.jar)
+- Также вам необходимо скачать зависимость — JAR файл [Iris JSON Parser](https://github.com/iris2iris/iris-vk-api/releases/download/v0.3/iris-json-parser.jar)
 
 ## Как это использовать
 
@@ -44,24 +44,25 @@ val vk = VkApiPack(token)
 val futuresList = vk.messages.sendMulti(listOf(
         Options("peer_id" to userToId, "message" to "Привет. Это сообщение с Kotlin\nОно почти работает!", "attachment" to "photo-181070115_457239553"),
         Options("peer_id" to 2, "message" to "Привет. Это сообщение с Kotlin\nОно почти работает!", "attachment" to "photo-181070115_457239553"),
-    )
+)
 )
 println("Прошёл сюда без задержек")
 val secondFutures = vk.execute(listOf(
-    VkRequestData("messages.send", Options("peer_id" to userToId, "message" to "Привет. Это сообщение с Kotlin\nОно почти работает!", "attachment" to "photo-181070115_457239553"))
-    , VkRequestData("messages.edit", Options("peer_id" to userToId, "conversation_message_id" to 1, "message" to "Привет. Это сообщение с Kotlin\nОно почти работает!", "attachment" to "photo-181070115_457239553"))
+        VkRequestData("messages.send", Options("peer_id" to userToId, "random_id" to (0..2_000_000).random(), "message" to "Привет. Это сообщение с Kotlin\nОно почти работает!", "attachment" to "photo-181070115_457239553"))
+        , VkRequestData("messages.edit", Options("peer_id" to userToId, "conversation_message_id" to 1, "message" to "Привет. Это сообщение с Kotlin\nОно почти работает!", "attachment" to "photo-181070115_457239553"))
 ))
 
-println("И сюда тоже без задержек. Но вот ниже нужно подождать")
+println("И сюда тоже без задержек. Но вот ниже нужно подождать\n")
+println("Первый пакет:")
 for (it in futuresList.futures)
     println(it.get()?.obj())
 
-println("Получили данные, пошли дальше")
+println()
+println("Второй пакет скорее всего без задержек:")
 for (it in secondFutures.futures)
     println(it.get()?.obj())
+println()
 println("Завершились")
-// У нас была создана фабрика потоков, поэтому так просто программа не завершится. Нужно принудительно
-exitProcess(0)
 ```
 
 ### VkEngineGroup — слушатель событий методом Long Poll

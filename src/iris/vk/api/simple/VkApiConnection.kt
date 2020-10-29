@@ -1,4 +1,6 @@
-package iris.vk
+package iris.vk.api.simple
+
+import iris.vk.Options
 
 /**
  * @created 07.09.2019

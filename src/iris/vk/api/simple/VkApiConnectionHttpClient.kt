@@ -1,6 +1,7 @@
-package iris.vk
+package iris.vk.api.simple
 
-import iris.vk.VkApiConnection.VkApiConnectResponse
+import iris.vk.Options
+import iris.vk.api.simple.VkApiConnection.VkApiConnectResponse
 import java.io.File
 import java.io.IOException
 import java.net.URI
@@ -116,11 +117,11 @@ class VkApiConnectionHttpClient(client: HttpClient? = null) : VkApiConnection {
 			} else if (value is File || value is Path) {
 				val path = if (value is File) Path.of(value.toURI()) else value as Path
 				val mimeType = Files.probeContentType(path)
-				byteArrays.add(("\"" + encode(entry.key as String) + "\"; filename=\"" + path.fileName + "\"\r\nContent-Type: " + mimeType + "\r\n\r\n").toByteArray());
+				byteArrays.add(("\"" + encode(entry.key) + "\"; filename=\"" + path.fileName + "\"\r\nContent-Type: " + mimeType + "\r\n\r\n").toByteArray());
 				byteArrays.add(Files.readAllBytes(path))
 				byteArrays.add("\r\n".toByteArray());
 			} else {
-				byteArrays.add(("\"" + encode(entry.key as String) + "\"\r\n\r\n" + entry.value + "\r\n").toByteArray());
+				byteArrays.add(("\"" + encode(entry.key) + "\"\r\n\r\n" + entry.value + "\r\n").toByteArray());
 			}
 		}
 		byteArrays.add(("--$boundary--").toByteArray());

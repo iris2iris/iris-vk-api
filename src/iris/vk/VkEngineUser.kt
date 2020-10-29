@@ -2,12 +2,12 @@ package iris.vk
 
 import iris.json.JsonArray
 import iris.json.JsonItem
-import iris.vk.VkApi.LongPollSettings
+import iris.vk.api.LongPollSettings
+import iris.vk.api.VK_BOT_ERROR_WRONG_TOKEN
+import iris.vk.api.VkApis
+import iris.vk.api.simple.VkApi
 import iris.vk.event.*
-import iris.vk.event.user.UserChatEvent
-import iris.vk.event.user.UserMessage
-import iris.vk.event.user.UserPinUpdate
-import iris.vk.event.user.UserTitleUpdate
+import iris.vk.event.user.*
 import java.util.*
 import java.util.logging.Logger
 
@@ -210,7 +210,7 @@ open class VkEngineUser(protected val vkApi: VkApi, protected val eventHandler: 
 		private val map: Map<Int, JsonItem> by lazy(LazyThreadSafetyMode.NONE) {
 			val ids = messages.map { it.asInt() }
 			val result = vkApi.messages.getById(ids)?: return@lazy emptyMap()
-			if (VkApi.isError(result))
+			if (VkApis.isError(result))
 				return@lazy emptyMap()
 			val items = result["response"]["items"] as JsonArray
 			items.associateBy { it["id"].asInt() }
@@ -218,7 +218,7 @@ open class VkEngineUser(protected val vkApi: VkApi, protected val eventHandler: 
 
 		private fun getDirect(id: Int): JsonItem? {
 			val result = vkApi.messages.getById(listOf(id))?: return null
-			if (VkApi.isError(result))
+			if (VkApis.isError(result))
 				return null
 			val items = result["response"]["items"] as JsonArray
 			return items.firstOrNull()

@@ -1,8 +1,8 @@
 package iris.vk.test
 
 import iris.vk.Options
-import iris.vk.VkApi
 import iris.vk.VkKeyboard
+import iris.vk.api.simple.VkApi
 
 /**
  * @created 05.10.2020
