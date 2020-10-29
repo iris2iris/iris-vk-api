@@ -1,6 +1,5 @@
 package iris.vk.api
 
-import iris.json.JsonItem
 import iris.vk.Options
 
 /**

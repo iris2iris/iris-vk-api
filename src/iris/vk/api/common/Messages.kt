@@ -2,10 +2,13 @@ package iris.vk.api.common
 
 import iris.json.JsonEncoder
 import iris.vk.Options
-import iris.vk.api.*
+import iris.vk.api.IMessages
+import iris.vk.api.LongPollSettings
+import iris.vk.api.Requester
 import iris.vk.api.VkApis.chat2PeerId
 import iris.vk.api.VkApis.group2PeerId
 import iris.vk.api.VkApis.user2PeerId
+import iris.vk.api.VkRequestData
 
 /**
  * @created 28.10.2020

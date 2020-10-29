@@ -2,8 +2,6 @@ package iris.vk.event.group
 
 import iris.json.JsonItem
 import iris.vk.event.CallbackEvent
-import iris.vk.event.Event
-import kotlin.LazyThreadSafetyMode.NONE
 
 /**
  * @created 28.10.2020

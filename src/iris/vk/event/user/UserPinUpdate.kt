@@ -2,7 +2,6 @@ package iris.vk.event.user
 
 import iris.json.JsonItem
 import iris.vk.event.PinUpdate
-import iris.vk.event.TitleUpdate
 
 /**
  * @created 28.10.2020

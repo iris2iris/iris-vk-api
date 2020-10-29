@@ -1,7 +1,6 @@
 package iris.vk.event
 
 import iris.json.JsonItem
-import iris.vk.Options
 
 /**
  * @created 28.10.2020

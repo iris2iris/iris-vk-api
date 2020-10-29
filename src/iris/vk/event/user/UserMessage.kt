@@ -10,7 +10,6 @@ import iris.json.plain.IrisJsonObject
 import iris.json.proxy.JsonProxyString
 import iris.vk.event.Message
 import kotlin.LazyThreadSafetyMode.NONE
-import kotlin.collections.ArrayList
 
 /**
  * @created 27.09.2020

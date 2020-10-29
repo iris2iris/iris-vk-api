@@ -1,6 +1,5 @@
 package iris.vk.event
 
-import iris.json.JsonArray
 import iris.json.JsonItem
 import iris.json.JsonObject
 
