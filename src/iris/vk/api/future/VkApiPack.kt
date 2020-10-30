@@ -102,7 +102,7 @@ open class VkApiPack(private val sender: Sender): VkApiFuture(sender.vkApi.token
 					futures.add(it.future)
 					requests.add(it.request)
 				}
-				val codes = VkApis.generateExecuteCode(requests, token, vkApi.version)
+				val codes = VkApis.generateExecuteCode(requests, token)
 				for (i in codes.indices) {
 					val code = codes[i]
 					val ind = i

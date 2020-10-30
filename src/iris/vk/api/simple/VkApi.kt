@@ -5,6 +5,7 @@ import iris.json.flow.JsonFlowParser
 import iris.vk.Options
 import iris.vk.api.*
 import iris.vk.api.common.*
+import iris.vk.api.future.VkApiFuture
 import java.util.Collections.emptyList
 import kotlin.LazyThreadSafetyMode.NONE
 
@@ -41,22 +42,11 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, intern
 		return parser(res)
 	}
 
-	override fun requestUrl(url: String, methodName: String): JsonItem? {
-		val res = connection.request(url)?.responseText ?: return null
-		return parser(res)
-	}
-
-	open fun utilsGetShortLink(url: String, isPrivate: Boolean = false, token: String? = null): JsonItem? {
-		val options = Options("url" to url, "private" to if (isPrivate) 1 else 0)
-		return request("utils.getShortLink", options, token)
-	}
-
-
 	override fun execute(data: List<VkRequestData>, token: String?): List<JsonItem> {
-		val codes = VkApis.generateExecuteCode(data, token?: this.token, version)
+		val codes = VkApis.generateExecuteCode(data, token?: this.token)
 		val response = mutableListOf<JsonItem>()
 		for (i in codes) {
-			val res = request(i)?: continue
+			val res = request(i.method, i.options, i.token)?: continue
 			val data = VkApis.prepareExecuteResponses(res)
 			response.addAll(data)
 		}

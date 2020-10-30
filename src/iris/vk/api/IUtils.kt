@@ -5,5 +5,8 @@ package iris.vk.api
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 interface IUtils<SingleType> {
+
 	fun checkLink(url: String): SingleType
+
+	fun getShortLink(url: String, isPrivate: Boolean = false, token: String? = null): SingleType
 }

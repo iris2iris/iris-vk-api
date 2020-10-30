@@ -32,9 +32,9 @@ open class VkEngineGroup(commander: VkApi, eventHandler: VkHandler, groupId: Int
 		return vkApi.groups.getLongPollServer(groupId)
 	}
 
-	override fun getUpdates(lpSettings: LongPollSettings, ts: String): JsonItem? {
+	/*override fun getUpdates(lpSettings: LongPollSettings, ts: String): JsonItem? {
 		return vkApi.groups.getUpdates(lpSettings, ts)
-	}
+	}*/
 
 	override fun getLongPollSettings(server: String, key: String, accessMode: String): LongPollSettings {
 		return LongPollSettings(server, key, accessMode)

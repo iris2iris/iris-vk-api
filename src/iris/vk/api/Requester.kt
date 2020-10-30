@@ -9,6 +9,5 @@ import iris.vk.Options
 interface Requester<SingleType, ListType> {
 	fun request(method: String, options: Options?, token: String? = null): SingleType
 	fun execute(data: List<VkRequestData>, token: String? = null): ListType
-	fun requestUrl(url: String, methodName: String): SingleType
 	fun emptyOfListType(): ListType
 }

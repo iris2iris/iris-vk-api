@@ -28,7 +28,7 @@ fun main() {
 		), inline = true /* default value true */)
 
 		val vk = VkApi(token)
-		val res = vk.messages.send(userToId, "Клавиатура на простых кнопках", Options("keyboard" to keyboard))
+		val res = vk.messages.send(userToId, "Клавиатура на простых кнопках", options = Options("keyboard" to keyboard))
 		println(res?.obj())
 	}
 
@@ -49,7 +49,7 @@ fun main() {
 		}
 
 		val vk = VkApi(token)
-		val res = vk.messages.send(userToId, "Клавиатура на callback-кнопках", Options("keyboard" to keyboard))
+		val res = vk.messages.send(userToId, "Клавиатура на callback-кнопках", options = Options("keyboard" to keyboard))
 		println(res?.obj())
 	}
 }

@@ -2,33 +2,30 @@ package iris.vk.api.common
 
 import iris.vk.Options
 import iris.vk.api.IGroups
-import iris.vk.api.LongPollSettings
 import iris.vk.api.Requester
 
 open class Groups<SingleType, ListType>(api: Requester<SingleType, ListType>) : SectionAbstract<SingleType, ListType>(api), IGroups<SingleType, ListType> {
+
 	override fun leave(groupId: Int): SingleType {
 		return request("groups.leave", Options("group_id" to groupId))
 	}
 
 	override fun get(userId: Int?, extended: Boolean, filter: String?, fields: String?, offset: Int, count: Int, token: String?): SingleType {
 		val params = Options()
-		if (userId != null)
-			params["user_id"] = userId
-		if (extended)
-			params["extended"] = extended
-		if (filter != null)
-			params["filter"] = filter
-		if (fields != null)
-			params["fields"] = fields
-		if (offset != 0)
-			params["offset"] = offset
-		if (count != 0)
-			params["count"] = count
+		if (userId != null) params["user_id"] = userId
+		if (extended) params["extended"] = "1"
+		if (filter != null) params["filter"] = filter
+		if (fields != null) params["fields"] = fields
+		if (offset != 0) params["offset"] = offset
+		if (count != 0) params["count"] = count
 		return request("groups.get", params, token)
 	}
 
-	override fun getById(ids: List<String>, fields: String?, token: String?): SingleType {
-		return request("groups.getById", Options("group_ids" to ids.joinToString(","), "fields" to fields), token)
+	override fun getById(ids: Collection<Int>, groupId: Int, fields: String?, token: String?): SingleType {
+		val options = Options("group_ids" to ids.joinToString { it.toString() })
+		if (groupId != 0) options["group_id"] to groupId
+		if (fields != null) options["fields"] to fields
+		return request("groups.getById", options, token)
 	}
 
 	override fun getLongPollSettings(groupId: Int, token: String?): SingleType {
@@ -45,12 +42,14 @@ open class Groups<SingleType, ListType>(api: Requester<SingleType, ListType>) : 
 		return request("groups.getLongPollServer", Options("group_id" to groupId))
 	}
 
-	override fun getUpdates(lpSettings: LongPollSettings, ts: String): SingleType {
-		return api.requestUrl(lpSettings.getUpdatesLink(ts), "groups.getUpdates")
-	}
-
-	override fun getBanned(groupId: Int, token: String?): SingleType {
-		return request("groups.getBanned", Options("group_id" to groupId), token)
+	override fun getBanned(groupId: Int, offset: Int, count: Int, fields: String?, ownerId: Int, token: String?): SingleType {
+		val options = Options()
+		options["group_id"] = groupId
+		if (offset != 0) options["offset"] = offset
+		if (count != 0) options["count"] = count
+		if (fields != null) options["fields"] = fields
+		if (ownerId != 0) options["owner_id"] = ownerId
+		return request("groups.getBanned", options, token)
 	}
 
 	override fun addCallbackServer(groupId: Int, url: String, title: String, secret: String): SingleType {
@@ -65,14 +64,11 @@ open class Groups<SingleType, ListType>(api: Requester<SingleType, ListType>) : 
 		return request("groups.getCallbackConfirmationCode", Options("group_id" to groupId))
 	}
 
-	override fun getMembers(groupId: Int, filter: String?, offset: String?, count: String?, token: String?): SingleType {
+	override fun getMembers(groupId: Int, filter: String?, offset: Int, count: Int, token: String?): SingleType {
 		val options = Options("group_id" to groupId)
-		if (filter != null)
-			options["filter"] = filter
-		if (offset != null)
-			options["offset"] = offset
-		if (count != null)
-			options["count"] = count
+		if (filter != null) options["filter"] = filter
+		if (offset != 0) options["offset"] = offset
+		if (count != 0) options["count"] = count
 
 		return request("groups.getMembers", options, token)
 	}
@@ -89,19 +85,23 @@ open class Groups<SingleType, ListType>(api: Requester<SingleType, ListType>) : 
 		return request("groups.getCallbackSettings", Options("group_id" to groupId))
 	}
 
-	override fun getCallbackServers(groupId: Int, serverIds: List<Int>?): SingleType {
+	override fun getCallbackServers(groupId: Int, serverIds: Collection<Int>?): SingleType {
 		val options = Options("group_id" to groupId)
 		if (serverIds != null)
 			options["server_ids"] = serverIds.joinToString(",")
 		return request("groups.getCallbackServers", options)
 	}
 
-	override fun isMember(idUsers: List<Int>, groupId: Int): SingleType {
-		return request("groups.isMember", Options("user_ids" to idUsers.joinToString(","), "group_id" to groupId))
+	override fun isMember(groupId: Int, usersId: Collection<Int>, extended: Boolean, token: String?): SingleType {
+		val options = Options("user_ids" to usersId.joinToString(","), "group_id" to groupId)
+		if (extended) options += "extended" to extended
+		return request("groups.isMember", options, token)
 	}
 
-	override fun isMember(idUser: Int, groupId: Int): SingleType {
-		return request("groups.isMember", Options("user_id" to idUser, "group_id" to groupId))
+	override fun isMember(groupId: Int, userId: Int, extended: Boolean, token: String?): SingleType {
+		val options = Options("user_id" to userId, "group_id" to groupId)
+		if (extended) options += "extended" to extended
+		return request("groups.isMember", options, token)
 	}
 
 

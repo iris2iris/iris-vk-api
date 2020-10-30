@@ -20,7 +20,8 @@ open class VkEngineUser(protected val vkApi: VkApi, protected val eventHandler: 
 
 	constructor(token: String, eventHandler: VkHandler) : this(VkApi(token), eventHandler)
 
-	var workStatus = true
+	private var workStatus = true
+
 	companion object {
 		val logger = Logger.getLogger("iris.vk")!!
 	}
@@ -140,7 +141,9 @@ open class VkEngineUser(protected val vkApi: VkApi, protected val eventHandler: 
 	}
 
 	protected open fun getUpdates(lpSettings: LongPollSettings, ts: String): JsonItem? {
-		return vkApi.messages.getUpdates(lpSettings, ts)
+		val response = vkApi.connection.request(lpSettings.getUpdatesLink(ts)) ?: return null
+		if (response.code != 200) return null
+		return vkApi.parser(response.responseText)
 	}
 
 	fun stop() {

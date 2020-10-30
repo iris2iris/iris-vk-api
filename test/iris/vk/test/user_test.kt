@@ -21,8 +21,6 @@ fun main() {
 	val simpleMessageHandler = object : VkHandlerAdapter() {
 
 		override fun processMessage(message: Message) {
-			// message содержит информацию о полученном JsonItem (message.source) и вспомогательную информацию, которую
-			// добавит сам программист по мере продвижения события (message.options)
 
 			// message.text — это метод, подготавливает текст для дальнейшей работы
 			val text = message.text

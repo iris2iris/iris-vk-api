@@ -3,6 +3,7 @@ package iris.vk.api.common
 import iris.vk.Options
 import iris.vk.api.IUtils
 import iris.vk.api.Requester
+import iris.vk.api.future.VkApiFuture
 
 /**
  * @created 29.10.2020
@@ -12,5 +13,10 @@ open class Utils<SingleType, ListType>(api: Requester<SingleType, ListType>) : S
 
 	override fun checkLink(url: String): SingleType {
 		return request("utils.checkLink", Options("url" to url))
+	}
+
+	override fun getShortLink(url: String, isPrivate: Boolean, token: String?): SingleType {
+		val options = Options("url" to url, "private" to if (isPrivate) "1" else "0")
+		return request("utils.getShortLink", options, token)
 	}
 }

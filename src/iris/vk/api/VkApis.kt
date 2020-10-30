@@ -91,7 +91,7 @@ object VkApis {
 		return result
 	}
 
-	fun generateExecuteCode(data: List<VkRequestData>, token: String, version: String): List<VkRequestData> {
+	fun generateExecuteCode(data: List<VkRequestData>, token: String): List<VkRequestData> {
 		val sb = StringBuilder()
 		val res = mutableListOf<VkRequestData>()
 
@@ -100,13 +100,13 @@ object VkApis {
 			sb.append("API.").append(item.method).append('('); JsonEncoder.encode(item.options, sb); sb.append("),")
 			if (i != 0 && i % 24 == 0) {
 				val str = "return [" + sb.substring(0, sb.length - 1) + "];"
-				res.add(VkRequestData("execute", Options("code" to str), token, version))
+				res.add(VkRequestData("execute", Options("code" to str), token))
 			}
 		}
 
 		if (sb.isNotEmpty()) {
 			val str = "return [" + sb.substring(0, sb.length - 1) + "];"
-			res.add(VkRequestData("execute", Options("code" to str), token, version))
+			res.add(VkRequestData("execute", Options("code" to str), token))
 		}
 		return res
 	}

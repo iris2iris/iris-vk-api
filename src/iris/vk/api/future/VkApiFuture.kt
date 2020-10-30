@@ -51,23 +51,9 @@ open class VkApiFuture(val token: String, val version: String = VK_API_VERSION, 
 		return future
 	}
 
-	override fun requestUrl(url: String, methodName: String): VkFuture {
-		val future = VkFuture()
-		connection.request(url).thenAccept {
-			future.complete(it?.let { parser(it.responseText) })
-		}
-		return future
-	}
-
-	open fun utilsGetShortLink(url: String, isPrivate: Boolean = false, token: String? = null): VkFuture {
-		val options = Options("url" to url, "private" to if (isPrivate) 1 else 0)
-		return request("utils.getShortLink", options, token)
-	}
-
-
 	override fun execute(data: List<VkRequestData>, token: String?): VkFutureList {
-		val codes = VkApis.generateExecuteCode(data, token?: this.token, version)
-		val futures = codes.map { request(it) }
+		val codes = VkApis.generateExecuteCode(data, token?: this.token)
+		val futures = codes.map { request(it.method, it.options, it.token) }
 		return VkExecuteFuture(futures)
 	}
 
