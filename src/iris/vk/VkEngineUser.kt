@@ -4,11 +4,7 @@ import iris.json.JsonArray
 import iris.json.JsonItem
 import iris.vk.api.LongPollSettings
 import iris.vk.api.VK_BOT_ERROR_WRONG_TOKEN
-import iris.vk.api.VkApis
 import iris.vk.api.simple.VkApi
-import iris.vk.event.*
-import iris.vk.event.user.*
-import java.util.*
 import java.util.logging.Logger
 
 /**
@@ -16,7 +12,9 @@ import java.util.logging.Logger
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 
-open class VkEngineUser(protected val vkApi: VkApi, protected val eventHandler: VkHandler) {
+open class VkEngineUser(protected val vkApi: VkApi, protected val updateProcessor: VkUpdateProcessor) {
+
+	constructor(api: VkApi, eventHandler: VkHandler) : this(api, VkUpdateProcessorUserDefault(api, eventHandler))
 
 	constructor(token: String, eventHandler: VkHandler) : this(VkApi(token), eventHandler)
 
@@ -128,7 +126,7 @@ open class VkEngineUser(protected val vkApi: VkApi, protected val eventHandler: 
 				}
 			}
 			lastTs = updates["ts"].asString()
-			processUpdates(updates["updates"] as JsonArray)
+			updateProcessor.processUpdates((updates["updates"] as JsonArray).getList())
 		}
 	}
 
@@ -150,121 +148,6 @@ open class VkEngineUser(protected val vkApi: VkApi, protected val eventHandler: 
 		this.workStatus = false
 	}
 
-	open fun processUpdates(updates: JsonArray) {
-		var checkMessages: LinkedList<UserMessage>? = null
-		var checkInvites: LinkedList<UserChatEvent>? = null
-		var checkLeave: LinkedList<UserChatEvent>? = null
-		var titleUpdaters: LinkedList<UserTitleUpdate>? = null
-		val pinUpdaters: LinkedList<UserPinUpdate>? = null
-		var apiSource: ApiSource? = null
-
-		for (update in updates) {
-			if (!update.isArray()) continue
-			update as JsonArray
-			if (update[0].asLong() == 4L) { // это сообщение
-				val sourceAct = update[7]["source_act"].asStringOrNull()
-				if (apiSource == null) apiSource = ApiSource()
-				apiSource += update[1]
-				if (sourceAct != null) {
-					when (sourceAct) {
-						"chat_invite_user" -> {
-							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += UserChatEvent(apiSource, update)
-						}
-						"chat_title_update" -> {
-							if (titleUpdaters == null) titleUpdaters = mutableListOf()
-							titleUpdaters!! += UserTitleUpdate(apiSource, update)
-						}
-						"chat_invite_user_by_link" -> {
-							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += UserChatEvent(apiSource, update)
-						}
-						"chat_kick_user" -> {
-							if (checkLeave == null) checkLeave = mutableListOf()
-							checkLeave!! += UserChatEvent(apiSource, update)
-						}
-						else -> {
-							if (checkMessages == null) checkMessages = mutableListOf()
-							checkMessages!! += UserMessage(apiSource, update)
-						}
-					}
-				} else {
-					if (checkMessages == null) checkMessages = mutableListOf()
-					checkMessages!! += UserMessage(apiSource, update)
-				}
-			}
-		}
-		if (checkMessages != null)
-			processMessages(checkMessages)
-		if (checkInvites != null)
-			processInvites(checkInvites)
-		if (titleUpdaters != null)
-			processTitleUpdates(titleUpdaters)
-		if (pinUpdaters != null)
-			processPinUpdates(pinUpdaters)
-		if (checkLeave != null)
-			processLeaves(checkLeave)
-	}
-
-	private inner class ApiSource : UserChatEvent.ApiSource {
-
-		val messages = mutableListOf<JsonItem>()
-
-		private val map: Map<Int, JsonItem> by lazy(LazyThreadSafetyMode.NONE) {
-			val ids = messages.map { it.asInt() }
-			val result = vkApi.messages.getById(ids)?: return@lazy emptyMap()
-			if (VkApis.isError(result))
-				return@lazy emptyMap()
-			val items = result["response"]["items"] as JsonArray
-			items.associateBy { it["id"].asInt() }
-		}
-
-		private fun getDirect(id: Int): JsonItem? {
-			val result = vkApi.messages.getById(listOf(id))?: return null
-			if (VkApis.isError(result))
-				return null
-			val items = result["response"]["items"] as JsonArray
-			return items.firstOrNull()
-		}
-
-		override fun getFullEvent(messageId: Int): JsonItem? {
-			return map[messageId] ?: getDirect(messageId)
-		}
-
-		operator fun plusAssign(item: JsonItem) {
-			messages += item
-		}
-	}
-
-	private inline fun <E>mutableListOf() = LinkedList<E>()
-
-	fun processMessages(messages: List<Message>) {
-		this.eventHandler.processMessages(messages)
-	}
-
-	fun processEditMessages(messages: List<Message>) {
-		this.eventHandler.processEditedMessages(messages)
-	}
-
-	fun processInvites(invites: List<ChatEvent>) {
-		this.eventHandler.processInvites(invites)
-	}
-
-	fun processTitleUpdates(updaters: List<TitleUpdate>) {
-		this.eventHandler.processTitleUpdates(updaters)
-	}
-
-	fun processPinUpdates(updaters: List<PinUpdate>) {
-		this.eventHandler.processPinUpdates(updaters)
-	}
-
-	fun processLeaves(users: List<ChatEvent>) {
-		this.eventHandler.processLeaves(users)
-	}
-
-	fun processCallbacks(callbacks: List<CallbackEvent>) {
-		this.eventHandler.processCallbacks(callbacks)
-	}
 }
 
 
