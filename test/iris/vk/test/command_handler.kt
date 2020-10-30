@@ -30,11 +30,13 @@ fun main() {
 		vk.messages.send(it.peerId, "Ваш ID равен: ${it.fromId}")
 	}
 
-	commandsHandler += "р" to RegexCommand(Regex("рандом (\\d+) (\\d+)")) { vkMessage, params ->
+	commandsHandler += "р" to RegexCommand("рандом (\\d+) (\\d+)") { vkMessage, params ->
+
 		var first = params[1].toInt()
 		var second = params[2].toInt()
 		if (second < first)
 			first = second.also { second = first }
+
 		vk.messages.send(vkMessage.peerId, "🎲 Случайное значение в диапазоне [$first..$second] выпало на ${(first..second).random()}")
 	}
 

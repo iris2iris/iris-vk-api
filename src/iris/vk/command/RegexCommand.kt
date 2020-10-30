@@ -8,6 +8,8 @@ import iris.vk.event.Message
  */
 open class RegexCommand(private val commandTemplate: Regex, private val runCommand: (message: Message, params: List<String>) -> Unit): Command {
 
+	constructor(commandTemplate: String, runCommand: (message: Message, params: List<String>) -> Unit) : this(Regex(commandTemplate), runCommand)
+
 	override fun testAndExecute(command: String, message: Message): Boolean {
 		val matcher = commandTemplate.matchEntire(command)?: return false
 		runCommand(message, matcher.groupValues)

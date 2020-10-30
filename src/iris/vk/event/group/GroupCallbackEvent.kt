@@ -9,7 +9,7 @@ import iris.vk.event.CallbackEvent
  */
 class GroupCallbackEvent(override val source: JsonItem) : CallbackEvent {
 	override val eventId: String by lazy { source["event_id"].asString() }
-	override val userId: Int by lazy { source["event_id"].asInt() }
+	override val userId: Int by lazy { source["user_id"].asInt() }
 	override val payload: String by lazy { source["payload"].asString() }
 	override val peerId: Int by lazy { source["peer_id"].asInt() }
 	override val conversationMessageId: Int by lazy { source["conversation_message_id"].asInt() }

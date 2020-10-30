@@ -429,8 +429,4 @@ open class Messages<SingleType, ListType>(api: Requester<SingleType, ListType>) 
 	override fun getChatMembers(chatId: Int, fields: String?, token: String?): SingleType {
 		return getConversationMembers(chat2PeerId(chatId), fields, token = token)
 	}
-
-	/*override fun getUpdates(lpSettings: LongPollSettings, ts: String): SingleType {
-		return api.requestUrl(lpSettings.getUpdatesLink(ts), "messages.getUpdates")
-	}*/
 }

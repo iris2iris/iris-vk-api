@@ -13,10 +13,8 @@ object TestUtil {
 	const val confPath = "excl/cfg.properties"
 
 	fun getProperties(): Properties {
-		val reader = File(confPath).reader()
 		val props = Properties()
-		props.load(reader)
-		reader.close()
+		File(confPath).reader().use { props.load(it) }
 		return props
 	}
 
