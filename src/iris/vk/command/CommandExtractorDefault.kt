@@ -6,9 +6,9 @@ import iris.vk.event.Message
  * @created 27.10.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class DefaultCommandBuilder(private val prefixes: String?) : CommandBuilder {
+class CommandExtractorDefault(private val prefixes: String?) : CommandExtractor {
 
-	override fun buildCommand(message: Message): String? {
+	override fun extractCommand(message: Message): String? {
 		val text = message.text ?: return null
 		if (text.isEmpty()) return null
 

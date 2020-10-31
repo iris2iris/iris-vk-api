@@ -15,27 +15,30 @@ fun main() {
 	val token = props.getProperty("group.token")
 
 	// Создаём класс для отправки сообщений
-	val vk = VkApiPack(token)
+	val api = VkApiPack(token)
 
 	// Определяем обработчик команд
 	val commandsHandler = VkCommandHandler()
 
-	commandsHandler += CommandMatcherSimple("пинг") {
-		vk.messages.send(it.peerId, "ПОНГ!")
-	}
+	// Конфигурирование команд в стиле DSL
+	commandsHandler += commands {
+		"пинг" to {
+			api.messages.send(it.peerId, "ПОНГ!")
+		}
 
-	commandsHandler += CommandMatcherSimple("мой ид") {
-		vk.messages.send(it.peerId, "Ваш ID равен: ${it.fromId}")
-	}
+		"мой ид" to {
+			api.messages.send(it.peerId, "Ваш ID равен: ${it.fromId}")
+		}
 
-	commandsHandler += CommandMatcherRegex("рандом (\\d+) (\\d+)") { vkMessage, params ->
+		regex("""рандом (\d+) (\d+)""") to { vkMessage, params ->
 
-		var first = params[1].toInt()
-		var second = params[2].toInt()
-		if (second < first)
-			first = second.also { second = first }
+			var first = params[1].toInt()
+			var second = params[2].toInt()
+			if (second < first)
+				first = second.also { second = first }
 
-		vk.messages.send(vkMessage.peerId, "🎲 Случайное значение в диапазоне [$first..$second] выпало на ${(first..second).random()}")
+			api.messages.send(vkMessage.peerId, "🎲 Случайное значение в диапазоне [$first..$second] выпало на ${(first..second).random()}")
+		}
 	}
 
 	// Передаём в параметрах слушателя событий токен и созданный обработчик команд

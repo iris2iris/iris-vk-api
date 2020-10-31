@@ -124,19 +124,48 @@ while (true) {
 ```kotlin
 val commandsHandler = VkCommandHandler()
 
-commandsHandler += SimpleCommand("пинг") {
+commandsHandler += CommandMatcherSimple("пинг") {
     vk.messages.send(it.peerId, "ПОНГ!")
 }
 
-commandsHandler += "р" to RegexCommand(Regex("рандом (\\d+) (\\d+)")) {vkMessage, params ->
+commandsHandler += CommandMatcherRegex("рандом (\\d+) (\\d+)") { vkMessage, params ->
+
     var first = params[1].toInt()
     var second = params[2].toInt()
-    if (second < first) {
-        val tmp = second
-        second = first
-        first = tmp
-    }
+    if (second < first)
+        first = second.also { second = first }
+
     vk.messages.send(vkMessage.peerId, "🎲 Случайное значение в диапазоне [$first..$second] выпало на ${(first..second).random()}")
+}
+
+// Передаём в параметрах слушателя событий токен и созданный обработчик команд
+val listener = VkEngineGroup(token, commandsHandler)
+listener.run()
+```
+
+### Настройка карты команд с помощью DSL
+```kotlin
+val commandsHandler = VkCommandHandler()
+
+// Конфигурирование команд в стиле DSL
+commandsHandler += commands {
+    "пинг" to {
+        api.messages.send(it.peerId, "ПОНГ!")
+    }
+
+    "мой ид" to {
+        api.messages.send(it.peerId, "Ваш ID равен: ${it.fromId}")
+    }
+
+    regex("""рандом (\d+) (\d+)""") to { vkMessage, params ->
+
+        var first = params[1].toInt()
+        var second = params[2].toInt()
+        if (second < first)
+            first = second.also { second = first }
+
+        api.messages.send(vkMessage.peerId, "🎲 Случайное значение в диапазоне [$first..$second] выпало на ${(first..second).random()}")
+    }
 }
 
 // Передаём в параметрах слушателя событий токен и созданный обработчик команд

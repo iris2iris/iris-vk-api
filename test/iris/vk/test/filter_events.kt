@@ -2,7 +2,7 @@ package iris.vk.test
 
 import iris.vk.*
 import iris.vk.api.simple.VkApi
-import iris.vk.command.SimpleCommand
+import iris.vk.command.CommandMatcherSimple
 import iris.vk.command.VkCommandHandler
 import iris.vk.event.Message
 import kotlin.system.exitProcess
@@ -22,7 +22,7 @@ fun main() {
 	// Определяем обработчик команд
 	val commandsHandler = VkCommandHandler()
 
-	commandsHandler += SimpleCommand("пинг") {
+	commandsHandler += CommandMatcherSimple("пинг") {
 		vk.messages.send(it.peerId, "ПОНГ!")
 	}
 
@@ -36,7 +36,7 @@ fun main() {
 	// Передаём в параметрах слушателя событий токен и созданный обработчик команд
 	val listener = VkEngineGroup(
 			token,
-			VkFilterHandler(
+			VkEventFilterHandler(
 					arrayOf(personalFilter),
 					commandsHandler
 			)
