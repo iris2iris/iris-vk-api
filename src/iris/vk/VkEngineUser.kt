@@ -14,9 +14,9 @@ import java.util.logging.Logger
 
 open class VkEngineUser(protected val vkApi: VkApi, protected val updateProcessor: VkUpdateProcessor) {
 
-	constructor(api: VkApi, eventHandler: VkHandler) : this(api, VkUpdateProcessorUserDefault(api, eventHandler))
+	constructor(api: VkApi, eventHandler: VkEventHandler) : this(api, VkUpdateProcessorUserDefault(api, eventHandler))
 
-	constructor(token: String, eventHandler: VkHandler) : this(VkApi(token), eventHandler)
+	constructor(token: String, eventHandler: VkEventHandler) : this(VkApi(token), eventHandler)
 
 	private var workStatus = true
 

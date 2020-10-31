@@ -21,7 +21,7 @@ class Options : HashMap<String, Any?> {
     fun <T>getList(key: String): List<T> {
         return when (val obj = this[key]) {
             is List<*> -> obj as List<T>
-            else -> (obj as Collection<T>).toList()
+            else -> (obj as Iterable<T>).toList()
         }
     }
 

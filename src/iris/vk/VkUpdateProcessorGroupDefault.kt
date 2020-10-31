@@ -5,7 +5,7 @@ import iris.vk.event.*
 import iris.vk.event.group.*
 import java.util.*
 
-class VkUpdateProcessorGroupDefault(private val handler: VkHandler) : VkUpdateProcessor {
+class VkUpdateProcessorGroupDefault(private val handler: VkEventHandler) : VkUpdateProcessor {
 
 	override fun processUpdates(updates: List<JsonItem>) {
 

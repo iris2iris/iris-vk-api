@@ -8,7 +8,8 @@ import iris.vk.event.*
  * @created 20.09.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class VkFilterHandler(private val filters: Array<VkEventFilter>, private val handler: VkHandler) : VkHandler {
+class VkEventFilterHandler(private val filters: Array<VkEventFilter>, private val handler: VkEventHandler) : VkEventHandler {
+
 	override fun processMessages(messages: List<Message>) {
 		var messages = messages
 		for (i in filters) {

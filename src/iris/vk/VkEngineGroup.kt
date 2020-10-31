@@ -12,7 +12,7 @@ import iris.vk.api.simple.VkApi
  */
 open class VkEngineGroup(commander: VkApi, updateProcessor: VkUpdateProcessor, groupId: Int = 0): VkEngineUser(commander, updateProcessor) {
 
-	constructor(token: String, messageHandler: VkHandler, version: String? = null) : this(VkApi(token, version?: VK_API_VERSION), VkUpdateProcessorGroupDefault(messageHandler))
+	constructor(token: String, messageHandler: VkEventHandler, version: String? = null) : this(VkApi(token, version?: VK_API_VERSION), VkUpdateProcessorGroupDefault(messageHandler))
 
 	private val groupId =
 		if (groupId == 0) {

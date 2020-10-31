@@ -6,7 +6,7 @@ import iris.vk.event.*
  * @created 22.03.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class VkHandlerArray(val list: Array<VkHandler>) : VkHandler {
+class VkEventHandlerArray(val list: Array<VkEventHandler>) : VkEventHandler {
 
 	override fun processMessages(messages: List<Message>) {
 		for (l in list) {

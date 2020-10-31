@@ -2,7 +2,7 @@ package iris.vk.test
 
 import iris.vk.api.future.VkApiPack
 import iris.vk.VkEngineGroup
-import iris.vk.VkHandlerAdapter
+import iris.vk.VkEventHandlerAdapter
 import iris.vk.event.CallbackEvent
 import iris.vk.event.Message
 import kotlin.system.exitProcess
@@ -21,7 +21,7 @@ fun main() {
 	val vk = VkApiPack(token)
 
 	// Определяем обработчик событий
-	val simpleMessageHandler = object : VkHandlerAdapter() {
+	val simpleMessageHandler = object : VkEventHandlerAdapter() {
 
 		override fun processMessage(message: Message) {
 			val text = message.text

@@ -6,14 +6,14 @@ import iris.vk.event.*
  * @created 08.02.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class VkHandlerList(val list: List<VkHandler>) : VkHandler {
+class VkEventHandlerList(val list: List<VkEventHandler>) : VkEventHandler {
 
-	operator fun plusAssign(handler: VkHandler) {
+	operator fun plusAssign(handler: VkEventHandler) {
 		add(handler)
 	}
 
-	fun add(handler: VkHandler) {
-		(list as MutableList<VkHandler>).add(handler)
+	fun add(handler: VkEventHandler) {
+		(list as MutableList<VkEventHandler>).add(handler)
 	}
 
 	override fun processMessages(messages: List<Message>) {

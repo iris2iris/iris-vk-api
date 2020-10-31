@@ -18,7 +18,7 @@ fun main() {
 	val vk = VkApiPack(token)
 
 	// Определяем простой обработчик событий
-	val simpleMessageHandler = object : VkHandlerAdapter() {
+	val simpleMessageHandler = object : VkEventHandlerAdapter() {
 
 		override fun processMessage(message: Message) {
 

@@ -8,10 +8,10 @@ import iris.vk.Options
  */
 open class LongPollSettings(server: String, key: String, mode: String, wait: Int = 10) {
 
-	private var link = "$server?act=a_check&key=$key&wait=$wait&mode=$mode"
+	private val link = "$server?act=a_check&key=$key&wait=$wait&mode=$mode&ts="
 
 	open fun getUpdatesLink(ts: String): String {
-		return "$link&ts=$ts"
+		return StringBuilder(link.length + ts.length).append(link).append(ts).toString()
 	}
 
 	companion object {

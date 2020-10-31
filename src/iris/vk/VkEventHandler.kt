@@ -6,7 +6,7 @@ import iris.vk.event.*
  * @created 08.09.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-interface VkHandler {
+interface VkEventHandler {
 	fun processMessages(messages: List<Message>)
 	fun processEditedMessages(messages: List<Message>)
 	fun processInvites(invites:List<ChatEvent>)

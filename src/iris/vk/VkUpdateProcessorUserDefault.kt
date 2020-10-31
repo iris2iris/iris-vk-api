@@ -11,7 +11,7 @@ import iris.vk.event.user.UserPinUpdate
 import iris.vk.event.user.UserTitleUpdate
 import java.util.*
 
-class VkUpdateProcessorUserDefault(private val api: VkApi, private val eventHandler: VkHandler) : VkUpdateProcessor {
+class VkUpdateProcessorUserDefault(private val api: VkApi, private val eventHandler: VkEventHandler) : VkUpdateProcessor {
 
 	override fun processUpdates(updates: List<JsonItem>) {
 		var checkMessages: LinkedList<UserMessage>? = null

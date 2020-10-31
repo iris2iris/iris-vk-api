@@ -6,7 +6,7 @@ import iris.vk.event.*
  * @created 26.09.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class VkHandlerAdapter: VkHandler {
+open class VkEventHandlerAdapter: VkEventHandler {
 
 	open fun processMessage(message: Message) {}
 	open fun processEditedMessage(message: Message) {}
