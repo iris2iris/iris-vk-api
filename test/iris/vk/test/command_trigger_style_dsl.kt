@@ -36,13 +36,13 @@ fun main() {
 
 		onMessage(VkCommandHandler().addAll(
 				commands {
-					"пинг" to {
+					"пинг" runs {
 						vk.messages.send(it.peerId, "ПОНГ!")
 					}
-					"мой ид" to {
+					"мой ид" runs {
 						vk.messages.send(it.peerId, "Ваш ID равен: ${it.fromId}")
 					}
-					regex("""рандом (\d+) (\d+)""") to { vkMessage, params ->
+					regex("""рандом (\d+) (\d+)""") runs { vkMessage, params ->
 
 						var first = params[1].toInt()
 						var second = params[2].toInt()

@@ -22,15 +22,15 @@ fun main() {
 
 	// Конфигурирование команд в стиле DSL
 	commandsHandler += commands {
-		"пинг" to {
+		"пинг" runs {
 			api.messages.send(it.peerId, "ПОНГ!")
 		}
 
-		"мой ид" to {
+		"мой ид" runs {
 			api.messages.send(it.peerId, "Ваш ID равен: ${it.fromId}")
 		}
 
-		regex("""рандом (\d+) (\d+)""") to { vkMessage, params ->
+		regex("""рандом (\d+) (\d+)""") runs { vkMessage, params ->
 
 			var first = params[1].toInt()
 			var second = params[2].toInt()

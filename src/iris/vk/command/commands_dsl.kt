@@ -14,19 +14,19 @@ open class DslCommandBuilder {
 
 	private val commands = mutableListOf<Pair<CommandMatcher, CharArray?>>()
 
-	infix fun String.to(command: (message: Message) -> Unit) {
+	infix fun String.runs(command: (message: Message) -> Unit) {
 		commands += CommandMatcherSimple(this, command).let { it to it.hashChars() }
 	}
 
-	infix fun String.to(command: Command) {
+	infix fun String.runs(command: Command) {
 		commands += CommandMatcherSimple(this, command).let { it to it.hashChars() }
 	}
 
-	infix fun RegexBuilder.to(command: (message: Message, params: List<String>) -> Unit) {
+	infix fun RegexBuilder.runs(command: (message: Message, params: List<String>) -> Unit) {
 		commands += CommandMatcherRegex(Regex(this.pattern), command) to this.hashChars
 	}
 
-	infix fun RegexBuilder.to(command: CommandMatcherRegex.CommandRegex) {
+	infix fun RegexBuilder.runs(command: CommandMatcherRegex.CommandRegex) {
 		commands += CommandMatcherRegex(Regex(this.pattern), command) to this.hashChars
 	}
 
