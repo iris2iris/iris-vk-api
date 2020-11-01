@@ -1,7 +1,7 @@
 package iris.vk.command
 
 import iris.vk.VkEventHandlerAdapter
-import iris.vk.VkEventHandlerTrigger
+import iris.vk.VkTriggerEventHandler
 import iris.vk.event.Message
 
 /**
@@ -12,7 +12,7 @@ import iris.vk.event.Message
 open class VkCommandHandler(
 	private val commandBuilder: CommandExtractor = CommandExtractorDefault(null),
 	private val searchFirst: Boolean = true
-) : VkEventHandlerAdapter(), VkEventHandlerTrigger.TriggerMessage {
+) : VkEventHandlerAdapter(), VkTriggerEventHandler.TriggerMessage {
 
 	constructor(commandBuilder: CommandExtractor = CommandExtractorDefault(null),
 				searchFirst: Boolean = true, commands: Iterable<CommandMatcherWithHash>) : this(commandBuilder, searchFirst) {

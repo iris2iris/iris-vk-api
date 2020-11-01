@@ -6,9 +6,9 @@ import iris.vk.event.*
  * @created 01.11.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class VkEventHandlerTrigger() : VkEventHandler {
+class VkTriggerEventHandler() : VkEventHandler {
 
-	constructor(initializer: VkEventHandlerTrigger.() -> Unit) : this() {
+	constructor(initializer: VkTriggerEventHandler.() -> Unit) : this() {
 		apply(initializer)
 	}
 

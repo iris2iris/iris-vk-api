@@ -1,7 +1,7 @@
 package iris.vk.test
 
 import iris.vk.VkEngineGroup
-import iris.vk.VkEventHandlerTrigger
+import iris.vk.VkTriggerEventHandler
 import iris.vk.api.future.VkApiPack
 import iris.vk.command.CommandMatcherRegex
 import iris.vk.command.CommandMatcherSimple
@@ -21,7 +21,7 @@ fun main() {
 	val vk = VkApiPack(token)
 
 	// Определяем обработчик триггеров
-	val triggerHandler = VkEventHandlerTrigger()
+	val triggerHandler = VkTriggerEventHandler()
 
 	// можно настраивать лямбдами
 	triggerHandler.onMessage {
