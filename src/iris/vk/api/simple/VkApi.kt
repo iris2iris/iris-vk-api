@@ -5,7 +5,6 @@ import iris.json.flow.JsonFlowParser
 import iris.vk.Options
 import iris.vk.api.*
 import iris.vk.api.common.*
-import iris.vk.api.future.VkApiFuture
 import java.util.Collections.emptyList
 import kotlin.LazyThreadSafetyMode.NONE
 

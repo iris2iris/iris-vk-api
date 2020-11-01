@@ -3,7 +3,6 @@ package iris.vk.api.common
 import iris.vk.Options
 import iris.vk.api.IUtils
 import iris.vk.api.Requester
-import iris.vk.api.future.VkApiFuture
 
 /**
  * @created 29.10.2020
