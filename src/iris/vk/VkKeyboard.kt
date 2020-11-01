@@ -59,10 +59,8 @@ object VkKeyboard {
 
 	fun cbCmd(command: String, forId: Int = 0, type: Int = CALLBACK_DEFAULT): String {
 		val std = Options("command" to command)
-		if (forId != 0)
-			std["for_id"] = forId
-		if (type != 0)
-			std["type"] = type
+		if (forId != 0) std["for_id"] = forId
+		if (type != 0) std["type"] = type
 		return JsonEncoder.encode(std)
 	}
 
@@ -115,10 +113,8 @@ object VkKeyboard {
 	fun create(buttons: List<Any>, inline: Boolean = true, oneTime: Boolean = false): Options {
 
 		val res = Options("buttons" to buttons)
-		if (inline)
-			res["inline"] = inline
-		else
-			res["one_time"] = oneTime
+		if (inline) res["inline"] = inline
+		else res["one_time"] = oneTime
 		return res
 	}
 
