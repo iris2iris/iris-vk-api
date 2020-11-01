@@ -173,6 +173,46 @@ val listener = VkEngineGroup(token, commandsHandler)
 listener.run()
 ```
 
+### Настройка обработки событий методом onXxx
+```kotlin
+// Определяем обработчик триггеров
+val triggerHandler = VkEventHandlerTrigger()
+
+// можно настраивать лямбдами
+triggerHandler.onMessage {
+    for (message in it)
+        println("Получено сообщение от ${message.peerId}: ${message.text}")
+}
+
+triggerHandler.onMessageEdit {
+    for (message in it)
+        println("Сообщение исправлено ${message.id}: ${message.text}")
+}
+
+// можно настраивать классами триггеров
+triggerHandler += VkCommandHandler(
+    commands = listOf(
+        CommandMatcherSimple("пинг") {
+            vk.messages.send(it.peerId, "ПОНГ!")
+        },
+
+        CommandMatcherSimple("мой ид") {
+            vk.messages.send(it.peerId, "Ваш ID равен: ${it.fromId}")
+        },
+
+        CommandMatcherRegex("""рандом (\d+) (\d+)""") { vkMessage, params ->
+
+            var first = params[1].toInt()
+            var second = params[2].toInt()
+            if (second < first)
+                first = second.also { second = first }
+
+            vk.messages.send(vkMessage.peerId, "🎲 Случайное значение в диапазоне [$first..$second] выпало на ${(first..second).random()}")
+        }
+    )
+)
+```
+
 Все приведённые выше примеры доступны в пакете [iris.vk.test](https://github.com/iris2iris/iris-vk-api/blob/master/test/iris/vk/test)
 
 ## Дополнительная информация

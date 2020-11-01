@@ -1,6 +1,7 @@
 package iris.vk.command
 
 import iris.vk.VkEventHandlerAdapter
+import iris.vk.VkEventHandlerTrigger
 import iris.vk.event.Message
 
 /**
@@ -11,7 +12,12 @@ import iris.vk.event.Message
 open class VkCommandHandler(
 	private val commandBuilder: CommandExtractor = CommandExtractorDefault(null),
 	private val searchFirst: Boolean = true
-) : VkEventHandlerAdapter() {
+) : VkEventHandlerAdapter(), VkEventHandlerTrigger.TriggerMessage {
+
+	constructor(commandBuilder: CommandExtractor = CommandExtractorDefault(null),
+				searchFirst: Boolean = true, commands: Iterable<CommandMatcherWithHash>) : this(commandBuilder, searchFirst) {
+		addAllWithHash(commands)
+	}
 
 	private val map = mutableMapOf<Char, MutableList<CommandMatcher>>()
 
@@ -44,8 +50,14 @@ open class VkCommandHandler(
 		return this
 	}
 
-	fun addAll(commands: Iterable<Pair<CommandMatcher, CharArray?>>) {
+	fun addAll(commands: Iterable<Pair<CommandMatcher, CharArray?>>): VkCommandHandler {
 		for (it in commands) add(it.first, it.second)
+		return this
+	}
+
+	fun addAllWithHash(commands: Iterable<CommandMatcherWithHash>): VkCommandHandler {
+		for (it in commands) add(it, it.hashChars())
+		return this
 	}
 
 	operator fun plusAssign(commands: Iterable<Pair<CommandMatcher, CharArray?>>) {
@@ -76,16 +88,20 @@ open class VkCommandHandler(
 		}
 	}
 
-	fun addCommands(vararg commands: CommandMatcher) {
+	fun addCommands(vararg commands: CommandMatcher): VkCommandHandler {
 		for (it in commands)
 			when (it) {
 				is CommandMatcherWithHash -> add(it)
 				else -> add(it)
 			}
+		return this
 	}
 
-	fun addCommands(vararg commands: CommandMatcherWithHash) {
+	fun addCommands(vararg commands: CommandMatcherWithHash): VkCommandHandler {
 		for (it in commands)
 			add(it)
+		return this
 	}
+
+	override fun process(messages: List<Message>) = processMessages(messages)
 }

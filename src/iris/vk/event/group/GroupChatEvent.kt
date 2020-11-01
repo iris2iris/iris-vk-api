@@ -11,7 +11,7 @@ import kotlin.LazyThreadSafetyMode.NONE
  */
 open class GroupChatEvent(source: JsonItem) : ChatEvent {
 	override val source: JsonItem = source
-	val message by lazy(NONE) { source["message"] }
+	open val message by lazy(NONE) { source["message"] }
 	override val id: Int by lazy(NONE) { message["id"].asInt() }
 	override val fromId: Int by lazy(NONE) { message["from_id"].asInt() }
 	override val chatId: Int by lazy(NONE) { VkApis.peer2ChatId(peerId) }

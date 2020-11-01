@@ -10,6 +10,7 @@ class VkUpdateProcessorGroupDefault(private val handler: VkEventHandler) : VkUpd
 	override fun processUpdates(updates: List<JsonItem>) {
 
 		var checkMessages: MutableList<Message>? = null
+		var checkEditMessages: MutableList<Message>? = null
 		var checkInvites: MutableList<ChatEvent>? = null
 		var checkLeave: MutableList<ChatEvent>? = null
 		var titleUpdaters: MutableList<TitleUpdate>? = null
@@ -52,6 +53,12 @@ class VkUpdateProcessorGroupDefault(private val handler: VkEventHandler) : VkUpd
 					if (checkMessages == null) checkMessages = mutableListOf()
 					checkMessages!! += GroupMessage(message)
 				}
+			} else if (type == "message_reply") {
+				if (checkMessages == null) checkMessages = mutableListOf()
+				checkMessages!! += GroupMessageWithoutChatInfo(update["object"])
+			} else if (type == "message_edit") {
+				if (checkEditMessages == null) checkEditMessages = mutableListOf()
+				checkEditMessages!! += GroupMessageWithoutChatInfo(update["object"])
 			} else if (type == "message_event") {
 				if (checkCallbacks == null) checkCallbacks = mutableListOf()
 				checkCallbacks!! += GroupCallbackEvent(update["object"])
@@ -61,6 +68,8 @@ class VkUpdateProcessorGroupDefault(private val handler: VkEventHandler) : VkUpd
 		}
 		if (checkMessages != null)
 			handler.processMessages(checkMessages)
+		if (checkEditMessages != null)
+			handler.processEditedMessages(checkEditMessages)
 		if (checkInvites != null)
 			handler.processInvites(checkInvites)
 		if (titleUpdaters != null)
