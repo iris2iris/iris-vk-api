@@ -24,17 +24,15 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 		val logger = Logger.getLogger("iris.vk")!!
 	}
 
-	private lateinit var thread: Thread
+	private var thread: Thread? = null
 
 	open fun startPolling() {
 		thread = Thread(this)
-		thread.start()
+		thread!!.start()
 	}
 
 	open fun join() {
-		if (!this::thread.isInitialized)
-			return
-		thread.join()
+		thread?.join()
 	}
 
 	override fun run() {
@@ -162,6 +160,7 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 
 	fun stop() {
 		this.isWorking = false
+		thread?.interrupt()
 	}
 
 }
