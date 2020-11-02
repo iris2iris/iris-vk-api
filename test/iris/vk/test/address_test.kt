@@ -1,9 +1,10 @@
 package iris.vk.test
 
-import iris.vk.VkAddressTesterDefault
-import iris.vk.VkEngineGroupCallback
-import iris.vk.VkEngineGroupCallback.GroupbotSource.Groupbot
-import iris.vk.VkEngineGroupCallback.GroupbotSource.SimpleGroupSource
+import iris.json.JsonItem
+import iris.vk.callback.VkAddressTesterDefault
+import iris.vk.callback.VkCallbackServer
+import iris.vk.callback.VkCallbackServer.GroupbotSource.Groupbot
+import iris.vk.callback.VkCallbackServer.GroupbotSource.SimpleGroupSource
 import java.util.logging.Logger
 
 /**
@@ -22,17 +23,19 @@ fun main() {
 		ipSubnets = arrayOf("95.142.192.0/21", "2a00:bdc0::/32")
 	)
 
-	val cbEngine = VkEngineGroupCallback(
+	val cbEngine = VkCallbackServer(
 			gbSource = SimpleGroupSource(Groupbot(groupId, confirmation, secret))
 			, path = "/kotlin/callback"
 			, addressTester = addressTester
 	)
-	cbEngine.start() // Запускаем сервер. Открываем порт для входящих. Неблокирующий вызов
 
-	while (true) {
-		val events = cbEngine.retrieve(wait = true) // ожидаем получения хотя бы одного события
-		for (event in events) {
-			logger.finest("Входящее сообщение")
+	cbEngine.setEventWriter(
+		object : VkCallbackServer.VkCallbackEventWriter {
+			override fun send(event: JsonItem) {
+				println("Новое событие:" + event.obj())
+			}
 		}
-	}
+	)
+
+	cbEngine.start() // Запускаем сервер. Открываем порт для входящих. Неблокирующий вызов
 }

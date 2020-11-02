@@ -12,4 +12,5 @@ interface VkApiInterface<SingleType, ListType> {
 	val photos: IPhotos<SingleType, ListType>
 	val docs: IDocs<SingleType, ListType>
 	val wall: IWall<SingleType, ListType>
+	val utils: IUtils<SingleType>
 }

@@ -1,4 +1,4 @@
-package iris.vk
+package iris.vk.callback
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpHandler
@@ -6,7 +6,6 @@ import com.sun.net.httpserver.HttpServer
 import iris.json.JsonItem
 import iris.json.flow.JsonFlowParser
 import java.net.InetSocketAddress
-import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.logging.Logger
@@ -20,16 +19,22 @@ import java.util.logging.Logger
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 
-open class VkEngineGroupCallback (
+open class VkCallbackServer (
+
 		private val gbSource: GroupbotSource,
 		private val addressTester: AddressTester? = null,
 		private val port: Int = 80,
 		private val path: String = "/callback",
 		private val requestsExecutor: Executor = Executors.newFixedThreadPool(4),
-		queueSize: Int = 1000,
+		private var eventWriter: VkCallbackEventWriter? = null,
 		expireEventTime: Long = 25_000L,
 		vkTimeVsLocalTimeDiff: Long = 0L
-) : VkRetrievable {
+
+) {
+
+	interface VkCallbackEventWriter {
+		fun send(event: JsonItem)
+	}
 
 	/**
 	 * Проверяет подлинность источника входящего запроса
@@ -90,17 +95,20 @@ open class VkEngineGroupCallback (
 	}
 
 	companion object {
-		var loggingExpired = false
+		var loggingExpired = true
 
 		private val logger = Logger.getLogger("iris.vk")
 	}
 
-	private val queue: ArrayBlockingQueue<JsonItem> = ArrayBlockingQueue(queueSize)
-	private val queueWait = Object()
 	private val expireEventTime = expireEventTime - vkTimeVsLocalTimeDiff
 
-	override fun start() {
+	private var server: HttpServer? = null
+
+	fun start() {
+		if (this.server != null)
+			throw IllegalStateException("Server already started")
 		val server = HttpServer.create()
+		this.server = server
 		server.bind(InetSocketAddress(port), 0)
 
 		server.executor = requestsExecutor
@@ -109,24 +117,19 @@ open class VkEngineGroupCallback (
 		logger.fine {"CALLBACK SERVER STARTED. PORT: $port" }
 	}
 
-	override fun retrieve(wait: Boolean): Array<JsonItem> {
-		synchronized(queueWait) {
-			do {
-				if (queue.size != 0) {
-					val res = queue.toArray(arrayOfNulls<JsonItem>(queue.size)) as Array<JsonItem>
-					queue.clear()
-					return res
-				}
-				if (!wait)
-					return emptyArray()
-				queueWait.wait()
-			} while (true)
-		}
+	fun stop() {
+		val server = this.server ?: return
+		server.stop(5)
+		this.server = null
 	}
 
-	inner class CallbackHandler : HttpHandler {
+	fun setEventWriter(eventWriter: VkCallbackEventWriter) {
+		this.eventWriter = eventWriter
+	}
 
-		private var expired: Long = 0
+	private inner class CallbackHandler : HttpHandler {
+
+		private var expired = 0
 		private val exp = Any()
 
 		override fun handle(request: HttpExchange) {
@@ -188,6 +191,7 @@ open class VkEngineGroupCallback (
 				}
 
 				writeResponse(request, "ok")
+				val eventWriter = eventWriter ?: return
 
 				if (groupbot.secret != null && groupbot.secret != event["secret"].asStringOrNull()) {
 					logger.info {"Secret is wrong: group id ${groupbot.id}" }
@@ -197,13 +201,25 @@ open class VkEngineGroupCallback (
 				var testDate = true
 				val obj = try {
 					when (type) {
-						"message_new" -> (if (event["object"]["message"].isNotNull()) event["object"]["message"] else if (event["object"]["text"].isNotNull()) event["object"] else return)
+						"message_new" -> {
+							val obj = event["object"]
+							obj["message"].let {
+								when {
+									it.isNotNull() -> it
+									obj["text"].isNotNull() -> obj
+									else -> return
+								}
+							}
+						}
 						"message_reply" -> event["object"]
 						"message_edit" -> event["object"]
 						"message_event" -> {
 							testDate = false; event["object"]
 						}
-						else -> return
+						else -> {
+							logger.info { "Unknown event type $type" }
+							return
+						}
 					}
 				} catch (e: Exception) {
 					logger.severe { e.stackTraceToString() }
@@ -217,14 +233,9 @@ open class VkEngineGroupCallback (
 					true
 
 				if (suitsTime) {
-					synchronized(queueWait) {
-						if (queue.offer(event))
-							queueWait.notify()
-						else {
-							logger.warning { "Callback API queue is full (${queue.size} elements). Clearing..." }
-							queue.clear()
-						}
-					}
+					// отправляем событие
+					eventWriter.send(event)
+
 					if (loggingExpired) {
 						synchronized(exp) {
 							expired = 0
@@ -235,7 +246,7 @@ open class VkEngineGroupCallback (
 						synchronized(exp) {
 							expired++
 						}
-						if (expired % 50 == 0L)
+						if (expired % 50 == 1)
 							logger.info { "Expired $expired" }
 					}
 				}

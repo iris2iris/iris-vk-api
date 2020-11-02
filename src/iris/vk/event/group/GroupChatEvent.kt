@@ -9,7 +9,7 @@ import kotlin.LazyThreadSafetyMode.NONE
  * @created 28.10.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class GroupChatEvent(source: JsonItem) : ChatEvent {
+open class GroupChatEvent(source: JsonItem, override val sourcePeerId: Int) : ChatEvent {
 	override val source: JsonItem = source
 	open val message by lazy(NONE) { source["message"] }
 	override val id: Int by lazy(NONE) { message["id"].asInt() }

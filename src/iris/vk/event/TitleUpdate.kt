@@ -5,5 +5,5 @@ package iris.vk.event
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 interface TitleUpdate : ChatEvent {
-
+	val text: String
 }

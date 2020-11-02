@@ -1,8 +1,12 @@
 package iris.vk.test
 
-import iris.vk.VkEngineGroupCallback
-import iris.vk.VkEngineGroupCallback.GroupbotSource.Groupbot
-import iris.vk.VkEngineGroupCallback.GroupbotSource.SimpleGroupSource
+import iris.vk.VkEventHandlerAdapter
+import iris.vk.api.simple.VkApi
+import iris.vk.callback.VkCallbackGroup
+import iris.vk.callback.VkCallbackServer
+import iris.vk.callback.VkCallbackServer.GroupbotSource.Groupbot
+import iris.vk.callback.VkCallbackServer.GroupbotSource.SimpleGroupSource
+import iris.vk.event.Message
 
 /**
  * @created 28.09.2020
@@ -15,17 +19,22 @@ fun main() {
 	val secret = props.getProperty("group.secret").ifBlank { null }
 	val confirmation = props.getProperty("group.confirmation")
 	val groupId = props.getProperty("group.id").toInt()
+	val token = props.getProperty("group.token")
 
-	val cbEngine = VkEngineGroupCallback(
+	val vk = VkApi(token)
+
+	val cbEngine = VkCallbackServer(
 			gbSource = SimpleGroupSource(Groupbot(groupId, confirmation, secret))
 			, path = "/kotlin/callback"
+			, vkTimeVsLocalTimeDiff = vk.request("utils.getServerTime", null)!!["response"].asLong()*1000L - System.currentTimeMillis()
 	)
-	cbEngine.start() // Запускаем сервер. Открываем порт для входящих. Неблокирующий вызов
 
-	while (true) {
-		val events = cbEngine.retrieve(wait = true) // ожидаем получения хотя бы одного события
-		for (event in events) {
-			println("Событие получено: " + event.obj())
+	val messageHandler = object : VkEventHandlerAdapter() {
+		override fun processMessage(message: Message) {
+			println("Событие получено. Group ID: ${message.sourcePeerId} текст: ${message.text}")
 		}
 	}
+
+	val listener = VkCallbackGroup(cbEngine, messageHandler)
+	listener.run()
 }

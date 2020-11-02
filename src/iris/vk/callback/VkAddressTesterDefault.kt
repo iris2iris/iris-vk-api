@@ -1,7 +1,7 @@
-package iris.vk
+package iris.vk.callback
 
 import com.sun.net.httpserver.HttpExchange
-import iris.vk.VkEngineGroupCallback.AddressTester
+import iris.vk.callback.VkCallbackServer.AddressTester
 import java.math.BigInteger
 import java.net.InetAddress
 

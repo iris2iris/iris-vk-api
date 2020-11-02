@@ -8,7 +8,7 @@ import iris.vk.event.ChatEvent
  * @created 28.10.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class UserChatEvent(private val fullItemSource: ApiSource, override val source: JsonItem) : ChatEvent {
+open class UserChatEvent(private val fullItemSource: ApiSource, override val source: JsonItem, override val sourcePeerId: Int) : ChatEvent {
 
 	interface ApiSource {
 		fun getFullEvent(messageId: Int): JsonItem?

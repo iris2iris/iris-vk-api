@@ -14,7 +14,7 @@ import kotlin.math.min
  */
 open class VkApiPack(private val sender: Sender): VkApiFuture(sender.vkApi.token) {
 
-	constructor(token: String) : this(Sender(VkApiFuture(token)))
+	constructor(token: String, strictlySequential: Boolean = false, completeAsync: Boolean = true) : this(Sender(VkApiFuture(token), strictlySequential, completeAsync))
 
 	override fun request(method: String, options: Options?, token: String?): VkFuture {
 		return request(VkRequestData(method, options, token?: this.token))
@@ -28,12 +28,16 @@ open class VkApiPack(private val sender: Sender): VkApiFuture(sender.vkApi.token
 		return VkFutureList(sender.executeAll(data))
 	}
 
-	class Sender(val vkApi: VkApiFuture = VkApiFuture("")) {
+	class Sender(val vkApi: VkApiFuture, private val strictlySequential: Boolean = false, private val completeAsync: Boolean = true) {
 
 		private val queue = ArrayBlockingQueue<JobData>(3000)
 		private val pillow = Object()
 		private val ex = emptyArray<JobData>()
 		private val thread = object : Thread() {
+
+			init {
+				isDaemon = true
+			}
 
 			override fun run() {
 				while (true) {
@@ -107,7 +111,7 @@ open class VkApiPack(private val sender: Sender): VkApiFuture(sender.vkApi.token
 					val code = codes[i]
 					val ind = i
 
-					val f = vkApi.request(code).whenCompleteAsync { res, error ->
+					val func = { res: JsonItem?, error: Throwable? ->
 						if (error != null) {
 							error.printStackTrace()
 							for (f in futures)
@@ -133,6 +137,9 @@ open class VkApiPack(private val sender: Sender): VkApiFuture(sender.vkApi.token
 						}
 					}
 
+					val f = vkApi.request(code).let { if (completeAsync) it.whenCompleteAsync(func) else it.whenComplete(func) }
+					if (strictlySequential)
+						f.get()
 					localFutures.add(f)
 				}
 			}

@@ -22,6 +22,7 @@ open class VkApi(val token: String, val version: String = VK_API_VERSION, intern
 	override val photos by lazy(NONE) { PhotosSimple(this) }
 	override val docs by lazy(NONE) { DocsSimple(this) }
 	override val wall by lazy(NONE) { Wall(this) }
+	override val utils by lazy(NONE) { Utils(this) }
 
 	//////////////////////////////////////
 

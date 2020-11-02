@@ -15,7 +15,7 @@ import kotlin.LazyThreadSafetyMode.NONE
  * @created 27.09.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class UserMessage(fullItemSource: ApiSource, source: JsonItem) : UserChatEvent(fullItemSource, source), Message {
+open class UserMessage(fullItemSource: ApiSource, source: JsonItem, sourcePeerId: Int) : UserChatEvent(fullItemSource, source, sourcePeerId), Message {
 
 	override val text by lazy(NONE) { source[6].asStringOrNull()?.replace("<br>", "\n") }
 

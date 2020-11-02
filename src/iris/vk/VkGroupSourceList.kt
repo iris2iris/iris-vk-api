@@ -1,8 +1,8 @@
 package iris.vk
 
 import com.sun.net.httpserver.HttpExchange
-import iris.vk.VkEngineGroupCallback.GroupbotSource
-import iris.vk.VkEngineGroupCallback.GroupbotSource.Groupbot
+import iris.vk.callback.VkCallbackServer.GroupbotSource
+import iris.vk.callback.VkCallbackServer.GroupbotSource.Groupbot
 
 /**
  * @created 29.09.2020

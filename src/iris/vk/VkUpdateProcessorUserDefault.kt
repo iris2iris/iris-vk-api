@@ -14,6 +14,7 @@ import java.util.*
 class VkUpdateProcessorUserDefault(private val api: VkApi, private val eventHandler: VkEventHandler) : VkUpdateProcessor {
 
 	override fun processUpdates(updates: List<JsonItem>) {
+		val sourcePeerId = 0
 		var checkMessages: LinkedList<UserMessage>? = null
 		var checkInvites: LinkedList<UserChatEvent>? = null
 		var checkLeave: LinkedList<UserChatEvent>? = null
@@ -32,28 +33,28 @@ class VkUpdateProcessorUserDefault(private val api: VkApi, private val eventHand
 					when (sourceAct) {
 						"chat_invite_user" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += UserChatEvent(apiSource, update)
+							checkInvites!! += UserChatEvent(apiSource, update, sourcePeerId)
 						}
 						"chat_title_update" -> {
 							if (titleUpdaters == null) titleUpdaters = mutableListOf()
-							titleUpdaters!! += UserTitleUpdate(apiSource, update)
+							titleUpdaters!! += UserTitleUpdate(apiSource, update, sourcePeerId)
 						}
 						"chat_invite_user_by_link" -> {
 							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += UserChatEvent(apiSource, update)
+							checkInvites!! += UserChatEvent(apiSource, update, sourcePeerId)
 						}
 						"chat_kick_user" -> {
 							if (checkLeave == null) checkLeave = mutableListOf()
-							checkLeave!! += UserChatEvent(apiSource, update)
+							checkLeave!! += UserChatEvent(apiSource, update, sourcePeerId)
 						}
 						else -> {
 							if (checkMessages == null) checkMessages = mutableListOf()
-							checkMessages!! += UserMessage(apiSource, update)
+							checkMessages!! += UserMessage(apiSource, update, sourcePeerId)
 						}
 					}
 				} else {
 					if (checkMessages == null) checkMessages = mutableListOf()
-					checkMessages!! += UserMessage(apiSource, update)
+					checkMessages!! += UserMessage(apiSource, update, sourcePeerId)
 				}
 			}
 		}

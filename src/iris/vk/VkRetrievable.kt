@@ -7,6 +7,5 @@ import iris.json.JsonItem
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 interface VkRetrievable {
-	fun retrieve(wait: Boolean = true): Array<JsonItem>
-	fun start()
+	fun retrieve(wait: Boolean = true): List<JsonItem>
 }

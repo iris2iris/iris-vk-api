@@ -99,21 +99,28 @@ val listener = VkPollingUser(token, simpleMessageHandler)
 //...
 ```
 
-### VkPollingCallback — слушатель событий методом VK Callback API
+### VkCallbackGroup — слушатель событий методом VK Callback API
 
 ```kotlin
-val cbEngine = VkPollingGroupCallback(
-        gbSource = SimpleGroupSource(Groupbot(groupId, confirmation, secret))
-        , path = "/kotlin/callback"
-)
-cbEngine.start() // Запускаем сервер. Открываем порт для входящих. Неблокирующий вызов
+val api = VkApiPack(token)
 
-while (true) {
-    val events = cbEngine.retrieve(wait = true) // ожидаем получения хотя бы одного события
-    for (event in events) {
-        println("Событие получено: " + event.obj())
+val cbEngine = VkCallbackServer(
+        gbSource = groupSource,
+        path = "/kotlin/callback",
+        addressTester = VkAddressTesterDefault(),
+        vkTimeVsLocalTimeDiff = api.utils.getServerTime().get()!!["response"].asLong()*1000L - System.currentTimeMillis()
+)
+
+val messageHandler = object : VkEventHandlerAdapter() {
+    override fun processMessage(message: Message) {
+        println("Событие получено. Group ID: ${message.sourcePeerId} текст: ${message.text}")
+        if (message.text == "пинг")
+            api.messages.send(message.peerId, "ПОНГ!")
     }
 }
+
+val listener = VkCallbackGroup(cbEngine, VkCallbackGroup.defaultUpdateProcessor(messageHandler))
+listener.run()
 ```
 Также смотрите более развёрнутый пример использования `VkPollingCallback` [iris.vk.test/group_cb_multibot.kt](https://github.com/iris2iris/iris-vk-api/blob/master/test/iris/vk/test/group_cb_multibot.kt)
 
@@ -218,4 +225,8 @@ triggerHandler += VkCommandHandler(
 
 **[Iris VK API](https://github.com/iris2iris/iris-vk-api)** использует библиотеку **[Iris JSON Parser](https://github.com/iris2iris/iris-json-parser-kotlin)** для обработки ответов от сервера VK. Загляните ознакомиться =)
 
-#### Не забывайте поставить звёзды, если этот инструмент оказался вам полезен ⭐
+### Благодарности
+Спасибо @markelovstyle за код-ревью, замечания и предложения
+
+⭐ **Не забывайте поставить звёзды, если этот инструмент оказался вам полезен**
+

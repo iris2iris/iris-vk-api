@@ -11,6 +11,11 @@ open class CommandMatcherRegex(private val commandPattern: Regex, private val ru
 	constructor(commandPattern: String, runCommand: (message: Message, params: List<String>) -> Unit) : this(Regex(commandPattern), runCommand)
 
 	constructor(commandPattern: Regex, runCommand: (message: Message, params: List<String>) -> Unit) : this(commandPattern, object : CommandRegex {
+
+		override fun run(message: Message) {
+			run(message, emptyList())
+		}
+
 		override fun run(message: Message, groupValues: List<String>) {
 			runCommand(message,groupValues)
 		}
@@ -31,7 +36,7 @@ open class CommandMatcherRegex(private val commandPattern: Regex, private val ru
 		}
 	}
 
-	interface CommandRegex {
+	interface CommandRegex : Command {
 		fun run(message: Message, groupValues: List<String>)
 	}
 }

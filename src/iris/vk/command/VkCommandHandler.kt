@@ -29,16 +29,24 @@ open class VkCommandHandler(
 		add(command, command.hashChars())
 	}
 
-	operator fun plusAssign(command: Pair<String, CommandMatcher>) {
-		add(command.second, command.first.toCharArray())
-	}
-
 	open fun add(command: CommandMatcher): VkCommandHandler {
 		return add(command, null)
 	}
 
 	open fun add(command: CommandMatcherWithHash): VkCommandHandler {
 		return add(command, command.hashChars())
+	}
+
+	operator fun plusAssign(text2Command: Pair<String, Command>) {
+		val (pattern, command) = text2Command
+		when(command) {
+			is CommandMatcherRegex.CommandRegex -> add(CommandMatcherRegex(Regex(pattern), command))
+			else -> add(CommandMatcherSimple(pattern, command))
+		}
+	}
+
+	open fun add(pattern: String, command: Command): VkCommandHandler {
+		return add(CommandMatcherSimple(pattern, command))
 	}
 
 	open fun add(command: CommandMatcher, chars: CharArray?): VkCommandHandler {

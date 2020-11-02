@@ -14,6 +14,10 @@ open class Utils<SingleType, ListType>(api: Requester<SingleType, ListType>) : S
 		return request("utils.checkLink", Options("url" to url))
 	}
 
+	override fun getServerTime(token: String?): SingleType {
+		return request("utils.getServerTime", null, token)
+	}
+
 	override fun getShortLink(url: String, isPrivate: Boolean, token: String?): SingleType {
 		val options = Options("url" to url, "private" to if (isPrivate) "1" else "0")
 		return request("utils.getShortLink", options, token)

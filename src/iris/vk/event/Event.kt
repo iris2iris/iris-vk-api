@@ -8,4 +8,5 @@ import iris.json.JsonItem
  */
 interface Event {
 	val source: JsonItem
+	val sourcePeerId: Int
 }

@@ -10,7 +10,7 @@ import kotlin.LazyThreadSafetyMode.NONE
  * @created 27.09.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class GroupMessage(source: JsonItem) : GroupChatEvent(source), Message {
+open class GroupMessage(source: JsonItem, sourcePeerId: Int) : GroupChatEvent(source, sourcePeerId), Message {
 
 	override val text by lazy(NONE) { message["text"].asStringOrNull()?.replace("\r", "") }
 	override val attachments: List<JsonItem>? by lazy(NONE) { val res = message["attachments"]; (if (res.isNull()) null else res as JsonArray)?.getList() }

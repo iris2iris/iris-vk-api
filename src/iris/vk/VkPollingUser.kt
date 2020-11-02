@@ -36,7 +36,22 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 	}
 
 	override fun run() {
+		isWorking = true
+		val thisThread = Thread.currentThread()
+		while (!thisThread.isInterrupted && isWorking) {
+			try {
+				runInternal()
+			} catch (e: Throwable) {
+				errorCaught(e)
+			}
+		}
+	}
 
+	protected fun errorCaught(e: Throwable) {
+		e.printStackTrace()
+	}
+
+	private fun runInternal() {
 		var longPoll = this.getLongPollServer()
 		if (longPoll == null) {
 			logger.warning("FAIL AUTH")
@@ -54,7 +69,6 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 		var longPollSettings = getLongPollSettings(longPoll["response"]["server"].asString(), longPoll["response"]["key"].asString(), accessMode)
 
 		val thisThread = Thread.currentThread()
-		isWorking = true
 		loop@ while (!thisThread.isInterrupted && this.isWorking)  {
 			val updates = getUpdates(longPollSettings, lastTs)
 
