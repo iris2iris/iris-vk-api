@@ -1,6 +1,6 @@
 package iris.vk.test
 
-import iris.vk.VkEngineGroup
+import iris.vk.VkPollingGroup
 import iris.vk.VkTriggerEventHandler
 import iris.vk.api.future.VkApiPack
 import iris.vk.command.VkCommandHandler
@@ -56,8 +56,10 @@ fun main() {
 	}
 
 	// Передаём в параметрах слушателя событий токен и созданный обработчик команд
-	val listener = VkEngineGroup(token, triggerHandler)
-	listener.run() // блокирует дальнейшее продвижение, пока не будет остановлено
+	val listener = VkPollingGroup(token, triggerHandler)
+	listener.startPolling() // Можно запустить неблокирующего слушателя
+	listener.join() // Даст дождаться завершения работы слушателя
+	//listener.run() // Можно заблокировать дальнейшую работу потока, пока не будет остановлено
 
 	exitProcess(0)
 }

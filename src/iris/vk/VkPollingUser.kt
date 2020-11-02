@@ -12,7 +12,7 @@ import java.util.logging.Logger
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 
-open class VkEngineUser(protected val vkApi: VkApi, protected val updateProcessor: VkUpdateProcessor) {
+open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcessor: VkUpdateProcessor) : Runnable {
 
 	constructor(api: VkApi, eventHandler: VkEventHandler) : this(api, VkUpdateProcessorUserDefault(api, eventHandler))
 
@@ -24,7 +24,20 @@ open class VkEngineUser(protected val vkApi: VkApi, protected val updateProcesso
 		val logger = Logger.getLogger("iris.vk")!!
 	}
 
-	fun run() {
+	private lateinit var thread: Thread
+
+	open fun startPolling() {
+		thread = Thread(this)
+		thread.start()
+	}
+
+	open fun join() {
+		if (!this::thread.isInitialized)
+			return
+		thread.join()
+	}
+
+	override fun run() {
 
 		var longPoll = this.getLongPollServer()
 		if (longPoll == null) {

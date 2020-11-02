@@ -41,7 +41,7 @@ fun main() {
 	}
 
 	// Передаём в параметрах слушателя событий токен и созданный обработчик событий
-	val listener = VkEngineUser(token, simpleMessageHandler)
+	val listener = VkPollingUser(token, simpleMessageHandler)
 	while (true)
 		try {
 			listener.run() // блокирует дальнейшее продвижение, пока не будет остановлено

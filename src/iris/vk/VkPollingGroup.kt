@@ -10,7 +10,7 @@ import iris.vk.api.simple.VkApi
  * @created 08.09.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class VkEngineGroup(commander: VkApi, updateProcessor: VkUpdateProcessor, groupId: Int = 0): VkEngineUser(commander, updateProcessor) {
+open class VkPollingGroup(commander: VkApi, updateProcessor: VkUpdateProcessor, groupId: Int = 0): VkPollingUser(commander, updateProcessor) {
 
 	constructor(token: String, messageHandler: VkEventHandler, version: String? = null) : this(VkApi(token, version?: VK_API_VERSION), VkUpdateProcessorGroupDefault(messageHandler))
 

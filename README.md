@@ -65,7 +65,7 @@ println()
 println("Завершились")
 ```
 
-### VkEngineGroup — слушатель событий методом Long Poll
+### VkPollingGroup — слушатель событий методом Long Poll
 
 ```kotlin
 // Создаём класс для отправки сообщений
@@ -86,24 +86,23 @@ val simpleMessageHandler = object : VkHandlerAdapter() {
 }
 
 // Передаём в параметрах слушателя событий токен и созданный обработчик событий
-val listener = VkEngineGroup(token, simpleMessageHandler)
-listener.run() // блокирует дальнейшее продвижение, пока не будет остановлено
-
-exitProcess(0)
+val listener = VkPollingGroup(token, simpleMessageHandler)
+listener.startPolling() // Можно запустить неблокирующего слушателя
+listener.join() // Даст дождаться завершения работы слушателя
 ```
 
-### VkEngineUser — слушатель событий пользовательского Long Poll
-Всё то же самое, что и у `VkEngineGroup`, только вместо этого класса используется `VkEngineUser`
+### VkPollingUser — слушатель событий пользовательского Long Poll
+Всё то же самое, что и у `VkPollingGroup`, только вместо этого класса используется `VkPollingUser`
 ```kotlin
 //...
-val listener = VkEngineUser(token, simpleMessageHandler)
+val listener = VkPollingUser(token, simpleMessageHandler)
 //...
 ```
 
-### VkEngineCallback — слушатель событий методом VK Callback API
+### VkPollingCallback — слушатель событий методом VK Callback API
 
 ```kotlin
-val cbEngine = VkEngineGroupCallback(
+val cbEngine = VkPollingGroupCallback(
         gbSource = SimpleGroupSource(Groupbot(groupId, confirmation, secret))
         , path = "/kotlin/callback"
 )
@@ -116,7 +115,7 @@ while (true) {
     }
 }
 ```
-Также смотрите более развёрнутый пример использования `VkEngineCallback` [iris.vk.test/group_cb_multibot.kt](https://github.com/iris2iris/iris-vk-api/blob/master/test/iris/vk/test/group_cb_multibot.kt)
+Также смотрите более развёрнутый пример использования `VkPollingCallback` [iris.vk.test/group_cb_multibot.kt](https://github.com/iris2iris/iris-vk-api/blob/master/test/iris/vk/test/group_cb_multibot.kt)
 
 ### VkCommandHandler
 
@@ -139,11 +138,11 @@ commandsHandler += CommandMatcherRegex("рандом (\\d+) (\\d+)") { vkMessage
 }
 
 // Передаём в параметрах слушателя событий токен и созданный обработчик команд
-val listener = VkEngineGroup(token, commandsHandler)
+val listener = VkPollingGroup(token, commandsHandler)
 listener.run()
 ```
 
-### Настройка карты команд с помощью DSL
+##### Настройка карты команд с помощью DSL
 ```kotlin
 val commandsHandler = VkCommandHandler()
 
@@ -169,7 +168,7 @@ commandsHandler += commands {
 }
 
 // Передаём в параметрах слушателя событий токен и созданный обработчик команд
-val listener = VkEngineGroup(token, commandsHandler)
+val listener = VkPollingGroup(token, commandsHandler)
 listener.run()
 ```
 

@@ -63,7 +63,7 @@ class VkUpdateProcessorGroupDefault(private val handler: VkEventHandler) : VkUpd
 				if (checkCallbacks == null) checkCallbacks = mutableListOf()
 				checkCallbacks!! += GroupCallbackEvent(update["object"])
 			} else {
-				VkEngineUser.logger.info("Unknown type of event: $type")
+				VkPollingUser.logger.info("Unknown type of event: $type")
 			}
 		}
 		if (checkMessages != null)
