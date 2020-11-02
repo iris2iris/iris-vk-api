@@ -18,7 +18,7 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 
 	constructor(token: String, eventHandler: VkEventHandler) : this(VkApi(token), eventHandler)
 
-	private var workStatus = true
+	private var isWorking = true
 
 	companion object {
 		val logger = Logger.getLogger("iris.vk")!!
@@ -54,7 +54,10 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 		var lastTs = longPoll["response"]["ts"].asString()
 		val accessMode = (2 + 8).toString()
 		var longPollSettings = getLongPollSettings(longPoll["response"]["server"].asString(), longPoll["response"]["key"].asString(), accessMode)
-		loop@ while (this.workStatus)  {
+
+		val thisThread = Thread.currentThread()
+		isWorking = true
+		loop@ while (!thisThread.isInterrupted && this.isWorking)  {
 			val updates = getUpdates(longPollSettings, lastTs)
 
 			if (updates == null) {
@@ -158,7 +161,7 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 	}
 
 	fun stop() {
-		this.workStatus = false
+		this.isWorking = false
 	}
 
 }
