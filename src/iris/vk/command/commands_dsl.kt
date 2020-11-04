@@ -22,6 +22,22 @@ open class DslCommandBuilder {
 		commands += CommandMatcherSimple(this, command).let { it to it.hashChars() }
 	}
 
+	infix fun Collection<String>.runs(command: Command) {
+		this.forEach { it ->
+			this@DslCommandBuilder.commands += CommandMatcherSimple(it, command).let { it to it.hashChars() }
+		}
+	}
+
+	fun list(vararg commands: String): List<String> {
+		return listOf(*commands)
+	}
+
+	infix fun Collection<String>.runs(command: (message: Message) -> Unit) {
+		this.forEach { it ->
+			this@DslCommandBuilder.commands += CommandMatcherSimple(it, command).let { it to it.hashChars() }
+		}
+	}
+
 	infix fun RegexBuilder.runs(command: (message: Message, params: List<String>) -> Unit) {
 		commands += CommandMatcherRegex(Regex(this.pattern), command) to this.hashChars
 	}

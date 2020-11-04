@@ -10,7 +10,7 @@ import iris.vk.event.Message
  */
 
 open class VkCommandHandler(
-	private val commandBuilder: CommandExtractor = CommandExtractorDefault(null),
+	private val commandExtractor: CommandExtractor = CommandExtractorDefault(null),
 	private val searchFirst: Boolean = true
 ) : VkEventHandlerAdapter(), VkTriggerEventHandler.TriggerMessage {
 
@@ -77,7 +77,7 @@ open class VkCommandHandler(
 	}
 
 	override fun processMessage(message: Message) {
-		val command = commandBuilder.extractCommand(message)?: return
+		val command = commandExtractor.extractCommand(message)?: return
 		if (command.isEmpty()) return
 		val hash = command[0]
 		var hashItems = map[hash]

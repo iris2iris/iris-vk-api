@@ -30,6 +30,10 @@ fun main() {
 			api.messages.send(it.peerId, "Ваш ID равен: ${it.fromId}")
 		}
 
+		list("!dev", "!debug") runs {
+			api.messages.send(it.peerId, "Debug is here!")
+		}
+
 		regex("""рандом (\d+) (\d+)""") runs { vkMessage, params ->
 
 			var first = params[1].toInt()
