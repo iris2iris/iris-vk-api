@@ -4,6 +4,7 @@ import iris.json.JsonArray
 import iris.json.JsonItem
 import iris.vk.api.LongPollSettings
 import iris.vk.api.VK_BOT_ERROR_WRONG_TOKEN
+import iris.vk.api.VkApis
 import iris.vk.api.simple.VkApi
 import java.util.logging.Logger
 
@@ -58,7 +59,10 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 			return
 		}
 		if (longPoll["response"].isNull()) {
-			logger.warning("No start response!")
+			if (VkApis.isError(longPoll))
+				logger.warning("VK Error: ${VkApis.errorString(longPoll)}")
+			else
+				logger.warning("No start response!\n${longPoll.obj()}")
 			return
 		}
 
