@@ -182,7 +182,7 @@ listener.run()
 ### Настройка обработки событий методом onXxx
 ```kotlin
 // Определяем обработчик триггеров
-val triggerHandler = VkEventHandlerTrigger()
+val triggerHandler = VkTriggerEventHandler()
 
 // можно настраивать лямбдами
 triggerHandler.onMessage {
