@@ -72,7 +72,7 @@ println("Завершились")
 val vk = VkApiPack(token)
 
 // Определяем простой обработчик событий
-val simpleMessageHandler = object : VkHandlerAdapter() {
+val simpleMessageHandler = object : VkEventHandlerAdapter() {
 
     override fun processMessage(message: Message) {
         // message содержит информацию о полученном JsonItem (message.source) и вспомогательную информацию, которую

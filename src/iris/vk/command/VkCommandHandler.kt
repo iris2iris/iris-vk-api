@@ -14,9 +14,22 @@ open class VkCommandHandler(
 	private val searchFirst: Boolean = true
 ) : VkEventHandlerAdapter(), VkTriggerEventHandler.TriggerMessage {
 
-	constructor(commandBuilder: CommandExtractor = CommandExtractorDefault(null),
-				searchFirst: Boolean = true, commands: Iterable<CommandMatcherWithHash>) : this(commandBuilder, searchFirst) {
-		addAllWithHash(commands)
+	constructor(commandExtractor: CommandExtractor = CommandExtractorDefault(null),
+				searchFirst: Boolean = true, commands: Iterable<CommandMatcherWithHash>? = null) : this(commandExtractor, searchFirst) {
+		if (commands != null)
+			addAllWithHash(commands)
+	}
+
+	constructor(prefixes: String?,
+				searchFirst: Boolean = true, commands: Iterable<CommandMatcherWithHash>? = null) : this(CommandExtractorDefault(prefixes), searchFirst) {
+		if (commands != null)
+			addAllWithHash(commands)
+	}
+
+	constructor(prefixes: Collection<String>,
+				searchFirst: Boolean = true, commands: Iterable<CommandMatcherWithHash>? = null) : this(CommandExtractorPrefixes(prefixes), searchFirst) {
+		if (commands != null)
+			addAllWithHash(commands)
 	}
 
 	private val map = mutableMapOf<Char, MutableList<CommandMatcher>>()
