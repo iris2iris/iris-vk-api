@@ -10,18 +10,18 @@ import iris.vk.event.Message
  */
 
 open class VkCommandHandler(
-	private val commandExtractor: CommandExtractor = CommandExtractorDefault(null),
-	private val searchFirst: Boolean = true
+		private val commandExtractor: CommandExtractor = CommandExtractorChars(null),
+		private val searchFirst: Boolean = true
 ) : VkEventHandlerAdapter(), VkTriggerEventHandler.TriggerMessage {
 
-	constructor(commandExtractor: CommandExtractor = CommandExtractorDefault(null),
+	constructor(commandExtractor: CommandExtractor = CommandExtractorChars(null),
 				searchFirst: Boolean = true, commands: Iterable<CommandMatcherWithHash>? = null) : this(commandExtractor, searchFirst) {
 		if (commands != null)
 			addAllWithHash(commands)
 	}
 
 	constructor(prefixes: String?,
-				searchFirst: Boolean = true, commands: Iterable<CommandMatcherWithHash>? = null) : this(CommandExtractorDefault(prefixes), searchFirst) {
+				searchFirst: Boolean = true, commands: Iterable<CommandMatcherWithHash>? = null) : this(CommandExtractorChars(prefixes), searchFirst) {
 		if (commands != null)
 			addAllWithHash(commands)
 	}

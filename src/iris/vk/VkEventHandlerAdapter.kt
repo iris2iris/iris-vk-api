@@ -30,4 +30,6 @@ open class VkEventHandlerAdapter: VkEventHandler {
 	override fun processLeaves(leaves: List<ChatEvent>) {}
 
 	override fun processCallbacks(callbacks: List<CallbackEvent>) {}
+
+	override fun processScreenshots(screenshots: List<ChatEvent>) {}
 }

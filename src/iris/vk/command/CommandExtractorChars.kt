@@ -6,15 +6,14 @@ import iris.vk.event.Message
  * @created 27.10.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class CommandExtractorDefault(prefixChars: String?, maxCommandLength: Int = 150, allowNoPrefix: Boolean = false)
+class CommandExtractorChars(prefixChars: String?, maxCommandLength: Int = 150, allowNoPrefix: Boolean = false)
 	: CommandExtractorAbstract(CommandExtractorChar(prefixChars, allowNoPrefix), maxCommandLength)
 {
 
 	class CommandExtractorChar(private val prefixChars: String? = null, private val allowNoPrefix: Boolean = false) : PrefixTester {
 		override fun find(text: String): Int {
 			return if (prefixChars != null) {
-				val first = text.first()
-				if (prefixChars.contains(first)) 1 else -1
+				if (!prefixChars.contains(text.first())) -1 else 1
 			} else
 				if (allowNoPrefix) 0 else -1
 		}

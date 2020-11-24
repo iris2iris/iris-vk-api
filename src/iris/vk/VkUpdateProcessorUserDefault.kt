@@ -20,6 +20,7 @@ class VkUpdateProcessorUserDefault(private val api: VkApi, private val eventHand
 		var checkLeave: LinkedList<UserChatEvent>? = null
 		var titleUpdaters: LinkedList<UserTitleUpdate>? = null
 		val pinUpdaters: LinkedList<UserPinUpdate>? = null
+		var screenshots: LinkedList<UserChatEvent>? = null
 		var apiSource: ApiSource? = null
 
 		for (update in updates) {
@@ -47,6 +48,10 @@ class VkUpdateProcessorUserDefault(private val api: VkApi, private val eventHand
 							if (checkLeave == null) checkLeave = mutableListOf()
 							checkLeave!! += UserChatEvent(apiSource, update, sourcePeerId)
 						}
+						"chat_screenshot" -> {
+							if (screenshots == null) screenshots = mutableListOf()
+							screenshots!! += UserChatEvent(apiSource, update, sourcePeerId)
+						}
 						else -> {
 							if (checkMessages == null) checkMessages = mutableListOf()
 							checkMessages!! += UserMessage(apiSource, update, sourcePeerId)
@@ -68,6 +73,8 @@ class VkUpdateProcessorUserDefault(private val api: VkApi, private val eventHand
 			processPinUpdates(pinUpdaters)
 		if (checkLeave != null)
 			processLeaves(checkLeave)
+		if (screenshots != null)
+			eventHandler.processScreenshots(screenshots)
 	}
 
 	private inner class ApiSource : UserChatEvent.ApiSource {

@@ -72,4 +72,15 @@ class VkEventFilterHandler(private val filters: Array<VkEventFilter>, private va
 		if (updaters.isNotEmpty())
 			handler.processCallbacks(updaters)
 	}
+
+	override fun processScreenshots(screenshots: List<ChatEvent>) {
+		var updaters = screenshots
+		for (i in filters) {
+			updaters = i.filterScreenshots(updaters)
+			if (updaters.isEmpty())
+				return
+		}
+		if (updaters.isNotEmpty())
+			handler.processScreenshots(updaters)
+	}
 }

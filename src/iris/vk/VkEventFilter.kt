@@ -17,5 +17,6 @@ interface VkEventFilter {
 	fun filterMessages(messages: List<Message>): List<Message>
 	fun filterTitleUpdates(updaters: List<TitleUpdate>): List<TitleUpdate>
 	fun filterCallbacks(callbacks: List<CallbackEvent>): List<CallbackEvent>
+	fun filterScreenshots(screenshots: List<ChatEvent>): List<ChatEvent>
 }
 

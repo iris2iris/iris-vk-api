@@ -19,6 +19,7 @@ class VkTriggerEventHandler() : VkEventHandler {
 	interface TriggerTitleUpdate { fun process(messages: List<TitleUpdate>) }
 	interface TriggerPinUpdate { fun process(messages: List<PinUpdate>) }
 	interface TriggerCallback { fun process(messages: List<CallbackEvent>) }
+	interface TriggerScreenshot { fun process(messages: List<ChatEvent>) }
 
 	class TriggerMessageLambda(private val processor: (messages: List<Message>) -> Unit) : TriggerMessage {
 		override fun process(messages: List<Message>) {
@@ -62,6 +63,12 @@ class VkTriggerEventHandler() : VkEventHandler {
 		}
 	}
 
+	class TriggerScreenshotLambda(private val processor: (messages: List<ChatEvent>) -> Unit) : TriggerScreenshot {
+		override fun process(messages: List<ChatEvent>) {
+			processor(messages)
+		}
+	}
+
 	private var messages: MutableList<TriggerMessage>? = null
 	private var editMessages: MutableList<TriggerEditMessage>? = null
 	private var invites: MutableList<TriggerInvite>? = null
@@ -69,6 +76,7 @@ class VkTriggerEventHandler() : VkEventHandler {
 	private var titles: MutableList<TriggerTitleUpdate>? = null
 	private var pins: MutableList<TriggerPinUpdate>? = null
 	private var callbacks: MutableList<TriggerCallback>? = null
+	private var screenshots: MutableList<TriggerScreenshot>? = null
 
 	operator fun plusAssign(trigger: TriggerMessage) {
 		if (messages == null) messages = mutableListOf()
@@ -103,6 +111,11 @@ class VkTriggerEventHandler() : VkEventHandler {
 	operator fun plusAssign(trigger: TriggerCallback) {
 		if (callbacks == null) callbacks = mutableListOf()
 		callbacks!! += trigger
+	}
+
+	operator fun plusAssign(trigger: TriggerScreenshot) {
+		if (screenshots == null) screenshots = mutableListOf()
+		screenshots!! += trigger
 	}
 
 	//fun onMessage(processor: (messages: List<Message>) -> Unit) = plusAssign(TriggerMessageLambda(processor))
@@ -142,5 +155,9 @@ class VkTriggerEventHandler() : VkEventHandler {
 
 	override fun processCallbacks(callbacks: List<CallbackEvent>) {
 		this.callbacks?.forEach { it.process(callbacks) }
+	}
+
+	override fun processScreenshots(screenshots: List<ChatEvent>) {
+		this.screenshots?.forEach { it.process(screenshots) }
 	}
 }

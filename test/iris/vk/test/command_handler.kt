@@ -18,7 +18,7 @@ fun main() {
 	val vk = VkApiPack(token)
 
 	// Определяем обработчик команд
-	val commandsHandler = VkCommandHandler()
+	val commandsHandler = VkCommandHandler("!.")
 
 	commandsHandler += CommandMatcherSimple("пинг") {
 		vk.messages.send(it.peerId, "ПОНГ!")

@@ -25,4 +25,8 @@ open class VkEventFilterAdapter : VkEventFilter {
 	override fun filterCallbacks(callbacks: List<CallbackEvent>): List<CallbackEvent> {
 		return callbacks
 	}
+
+	override fun filterScreenshots(screenshots: List<ChatEvent>): List<ChatEvent> {
+		return screenshots
+	}
 }

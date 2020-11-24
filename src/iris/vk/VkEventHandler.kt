@@ -14,4 +14,5 @@ interface VkEventHandler {
 	fun processTitleUpdates(updaters:List<TitleUpdate>)
 	fun processPinUpdates(updaters:List<PinUpdate>)
 	fun processCallbacks(callbacks: List<CallbackEvent>)
+	fun processScreenshots(screenshots: List<ChatEvent>)
 }

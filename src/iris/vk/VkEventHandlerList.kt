@@ -51,4 +51,9 @@ class VkEventHandlerList(val list: List<VkEventHandler>) : VkEventHandler {
 		for (l in list)
 			l.processCallbacks(callbacks)
 	}
+
+	override fun processScreenshots(screenshots: List<ChatEvent>) {
+		for (l in list)
+			l.processScreenshots(screenshots)
+	}
 }

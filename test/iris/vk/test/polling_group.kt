@@ -4,6 +4,7 @@ import iris.vk.api.future.VkApiPack
 import iris.vk.VkPollingGroup
 import iris.vk.VkEventHandlerAdapter
 import iris.vk.event.CallbackEvent
+import iris.vk.event.ChatEvent
 import iris.vk.event.Message
 import kotlin.system.exitProcess
 
@@ -17,11 +18,12 @@ fun main() {
 	val props = TestUtil.getProperties()
 	val token = props.getProperty("group.token")
 
-	// Создаём класс для отправки сообщений
-	val vk = VkApiPack(token)
+
 
 	// Определяем обработчик событий
 	val simpleMessageHandler = object : VkEventHandlerAdapter() {
+
+		private val vk = VkApiPack(token)
 
 		override fun processMessage(message: Message) {
 			val text = message.text
@@ -38,6 +40,12 @@ fun main() {
 		override fun processCallbacks(callbacks: List<CallbackEvent>) {
 			for (callback in callbacks) {
 				println("Получено callback-событие: ${callback.eventId} payload=${callback.payload}")
+			}
+		}
+
+		override fun processScreenshots(screenshots: List<ChatEvent>) {
+			for (screenshot in screenshots) {
+				println("Получено screenshot-событие: ${screenshot.peerId} fromId=${screenshot.fromId}")
 			}
 		}
 	}
