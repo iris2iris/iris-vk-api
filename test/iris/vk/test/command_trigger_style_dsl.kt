@@ -34,8 +34,8 @@ fun main() {
 				println("Сообщение исправлено ${message.id}: ${message.text}")
 		}
 
-		onMessage(VkCommandHandler().addAll(
-				commands {
+		onMessage(VkCommandHandler(
+				commands = commands {
 					"пинг" runs {
 						vk.messages.send(it.peerId, "ПОНГ!")
 					}

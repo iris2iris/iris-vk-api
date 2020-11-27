@@ -1,6 +1,7 @@
 package iris.vk
 
 import iris.vk.event.*
+import java.util.*
 
 /**
  * @created 08.09.2019
@@ -13,6 +14,8 @@ interface VkEventHandler {
 	fun processLeaves(leaves:List<ChatEvent>)
 	fun processTitleUpdates(updaters:List<TitleUpdate>)
 	fun processPinUpdates(updaters:List<PinUpdate>)
+	fun processUnpinUpdates(updates: List<PinUpdate>)
 	fun processCallbacks(callbacks: List<CallbackEvent>)
 	fun processScreenshots(screenshots: List<ChatEvent>)
+	fun processOthers(others: List<OtherEvent>)
 }

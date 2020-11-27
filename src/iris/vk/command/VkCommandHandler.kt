@@ -62,6 +62,14 @@ open class VkCommandHandler(
 		return add(CommandMatcherSimple(pattern, command))
 	}
 
+	open fun regex(pattern: String, command: CommandMatcherRegex.CommandRegex): VkCommandHandler {
+		return add(CommandMatcherRegex(Regex(pattern), command))
+	}
+
+	open fun regex(pattern: String, command: (vkMessage: Message, parameters: List<String>) -> Unit): VkCommandHandler {
+		return add(CommandMatcherRegex(pattern, command))
+	}
+
 	open fun add(command: CommandMatcher, chars: CharArray?): VkCommandHandler {
 		if (chars == null)
 			map.getOrPut(NULL_CHAR) { mutableListOf() }.add(command)
@@ -79,6 +87,10 @@ open class VkCommandHandler(
 	fun addAllWithHash(commands: Iterable<CommandMatcherWithHash>): VkCommandHandler {
 		for (it in commands) add(it, it.hashChars())
 		return this
+	}
+
+	operator fun plusAssign(commands: Collection<CommandMatcherWithHash>) {
+		addAllWithHash(commands)
 	}
 
 	operator fun plusAssign(commands: Iterable<Pair<CommandMatcher, CharArray?>>) {

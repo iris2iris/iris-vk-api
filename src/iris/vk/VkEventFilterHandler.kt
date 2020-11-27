@@ -44,7 +44,23 @@ class VkEventFilterHandler(private val filters: Array<VkEventFilter>, private va
 	}
 
 	override fun processPinUpdates(updaters: List<PinUpdate>) {
+		var updaters = updaters
+		for (i in filters) {
+			updaters = i.filterPinUpdates(updaters)
+			if (updaters.isEmpty())
+				return
+		}
 		handler.processPinUpdates(updaters)
+	}
+
+	override fun processUnpinUpdates(updates: List<PinUpdate>) {
+		var updaters = updates
+		for (i in filters) {
+			updaters = i.filterUnpinUpdates(updaters)
+			if (updaters.isEmpty())
+				return
+		}
+		handler.processUnpinUpdates(updaters)
 	}
 
 	override fun processLeaves(leaves: List<ChatEvent>) {
@@ -82,5 +98,16 @@ class VkEventFilterHandler(private val filters: Array<VkEventFilter>, private va
 		}
 		if (updaters.isNotEmpty())
 			handler.processScreenshots(updaters)
+	}
+
+	override fun processOthers(others: List<OtherEvent>) {
+		var items = others
+		for (i in filters) {
+			items = i.filterOthers(items)
+			if (items.isEmpty())
+				return
+		}
+		if (items.isNotEmpty())
+			handler.processOthers(items)
 	}
 }

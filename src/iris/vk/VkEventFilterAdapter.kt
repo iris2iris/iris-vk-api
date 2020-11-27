@@ -1,9 +1,6 @@
 package iris.vk
 
-import iris.vk.event.CallbackEvent
-import iris.vk.event.ChatEvent
-import iris.vk.event.Message
-import iris.vk.event.TitleUpdate
+import iris.vk.event.*
 
 open class VkEventFilterAdapter : VkEventFilter {
 	override fun filterInvites(invites: List<ChatEvent>): List<ChatEvent> {
@@ -28,5 +25,17 @@ open class VkEventFilterAdapter : VkEventFilter {
 
 	override fun filterScreenshots(screenshots: List<ChatEvent>): List<ChatEvent> {
 		return screenshots
+	}
+
+	override fun filterPinUpdates(updaters: List<PinUpdate>): List<PinUpdate> {
+		return updaters
+	}
+
+	override fun filterUnpinUpdates(updaters: List<PinUpdate>): List<PinUpdate> {
+		return updaters
+	}
+
+	override fun filterOthers(others: List<OtherEvent>): List<OtherEvent> {
+		return others
 	}
 }

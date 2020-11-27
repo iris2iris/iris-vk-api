@@ -27,9 +27,13 @@ open class VkEventHandlerAdapter: VkEventHandler {
 
 	override fun processPinUpdates(updaters: List<PinUpdate>) {}
 
+	override fun processUnpinUpdates(updates: List<PinUpdate>) {}
+
 	override fun processLeaves(leaves: List<ChatEvent>) {}
 
 	override fun processCallbacks(callbacks: List<CallbackEvent>) {}
 
 	override fun processScreenshots(screenshots: List<ChatEvent>) {}
+
+	override fun processOthers(others: List<OtherEvent>) {}
 }

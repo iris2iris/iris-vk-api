@@ -11,129 +11,176 @@ import iris.vk.event.user.UserPinUpdate
 import iris.vk.event.user.UserTitleUpdate
 import java.util.*
 
-class VkUpdateProcessorUserDefault(private val api: VkApi, private val eventHandler: VkEventHandler) : VkUpdateProcessor {
+class VkUpdateProcessorUserDefault(private val eventHandler: VkEventHandler, private val eventProducer: VkEventProducerFactory) : VkUpdateProcessor {
+
+	constructor(api: VkApi, eventHandler: VkEventHandler) : this(eventHandler, UserEventProducerDefault(api))
+
+	private class UserEventProducerDefault(private val api: VkApi) : VkEventProducerFactory {
+		override fun producer(): VkEventProducer = SubUserEventProducer(api)
+	}
+
+	private class SubUserEventProducer(api: VkApi) : VkEventProducer {
+
+		private val apiSource = ApiSource(api)
+
+		private class ApiSource(private val api: VkApi) : UserChatEvent.ApiSource {
+
+			val messages = mutableListOf<JsonItem>()
+
+			private val map: Map<Int, JsonItem> by lazy(LazyThreadSafetyMode.NONE) {
+				val ids = messages.map { it[1].asInt() }
+				val result = api.messages.getById(ids)?: return@lazy emptyMap()
+				if (VkApis.isError(result))
+					return@lazy emptyMap()
+				val items = result["response"]["items"] as JsonArray
+				items.associateBy { it["id"].asInt() }
+			}
+
+			private fun getDirect(id: Int): JsonItem? {
+				val result = api.messages.getById(listOf(id))?: return null
+				if (VkApis.isError(result))
+					return null
+				val items = result["response"]["items"] as JsonArray
+				return items.firstOrNull()
+			}
+
+			override fun getFullEvent(messageId: Int): JsonItem? {
+				return map[messageId] ?: getDirect(messageId)
+			}
+
+			operator fun plusAssign(item: JsonItem) {
+				messages += item
+			}
+		}
+
+		override fun message(obj: JsonItem, sourcePeerId: Int): Message {
+			apiSource += obj[1]
+			return UserMessage(apiSource, obj, sourcePeerId)
+		}
+
+		override fun messageWithoutChatInfo(obj: JsonItem, sourcePeerId: Int): Message {
+			apiSource += obj[1]
+			return UserMessage(apiSource, obj, sourcePeerId)
+		}
+
+		override fun invite(obj: JsonItem, sourcePeerId: Int): ChatEvent {
+			apiSource += obj
+			return UserChatEvent(apiSource, obj, sourcePeerId)
+		}
+
+		override fun leave(obj: JsonItem, sourcePeerId: Int): ChatEvent {
+			apiSource += obj
+			return UserChatEvent(apiSource, obj, sourcePeerId)
+		}
+
+		override fun titleUpdate(obj: JsonItem, sourcePeerId: Int): TitleUpdate {
+			apiSource += obj
+			return UserTitleUpdate(apiSource, obj, sourcePeerId)
+		}
+
+		override fun pin(obj: JsonItem, sourcePeerId: Int): PinUpdate {
+			apiSource += obj
+			return UserPinUpdate(apiSource, obj, sourcePeerId)
+		}
+
+		override fun unpin(obj: JsonItem, sourcePeerId: Int): PinUpdate {
+			apiSource += obj
+			return UserPinUpdate(apiSource, obj, sourcePeerId)
+		}
+
+		override fun screenshot(obj: JsonItem, sourcePeerId: Int): ChatEvent {
+			apiSource += obj
+			return UserChatEvent(apiSource, obj, sourcePeerId)
+		}
+
+		override fun callback(obj: JsonItem, sourcePeerId: Int): CallbackEvent {
+			throw IllegalArgumentException("???")
+		}
+
+		override fun otherEvent(obj: JsonItem, sourcePeerId: Int): OtherEvent {
+			return OtherEvent(obj, sourcePeerId)
+		}
+	}
 
 	override fun processUpdates(updates: List<JsonItem>) {
 		val sourcePeerId = 0
-		var checkMessages: LinkedList<UserMessage>? = null
-		var checkInvites: LinkedList<UserChatEvent>? = null
-		var checkLeave: LinkedList<UserChatEvent>? = null
-		var titleUpdaters: LinkedList<UserTitleUpdate>? = null
-		val pinUpdaters: LinkedList<UserPinUpdate>? = null
-		var screenshots: LinkedList<UserChatEvent>? = null
-		var apiSource: ApiSource? = null
-
+		var messages: MutableList<Message>? = null
+		//var editMessages: LinkedList<Message>? = null
+		var invites: MutableList<ChatEvent>? = null
+		var leaves: MutableList<ChatEvent>? = null
+		var titleUpdaters: MutableList<TitleUpdate>? = null
+		var pinUpdaters: MutableList<PinUpdate>? = null
+		var unpinUpdaters: MutableList<PinUpdate>? = null
+		var screenshots: MutableList<ChatEvent>? = null
+		var others: MutableList<OtherEvent>? = null
+		val producer = eventProducer.producer()
 		for (update in updates) {
 			if (!update.isArray()) continue
 			update as JsonArray
 			if (update[0].asLong() == 4L) { // это сообщение
 				val sourceAct = update[7]["source_act"].asStringOrNull()
-				if (apiSource == null) apiSource = ApiSource()
-				apiSource += update[1]
 				if (sourceAct != null) {
 					when (sourceAct) {
 						"chat_invite_user" -> {
-							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += UserChatEvent(apiSource, update, sourcePeerId)
+							if (invites == null) invites = mutableListOf()
+							invites!! += producer.invite(update, sourcePeerId)
 						}
 						"chat_title_update" -> {
 							if (titleUpdaters == null) titleUpdaters = mutableListOf()
-							titleUpdaters!! += UserTitleUpdate(apiSource, update, sourcePeerId)
+							titleUpdaters!! += producer.titleUpdate(update, sourcePeerId)
 						}
 						"chat_invite_user_by_link" -> {
-							if (checkInvites == null) checkInvites = mutableListOf()
-							checkInvites!! += UserChatEvent(apiSource, update, sourcePeerId)
+							if (invites == null) invites = mutableListOf()
+							invites!! += producer.invite(update, sourcePeerId)
 						}
 						"chat_kick_user" -> {
-							if (checkLeave == null) checkLeave = mutableListOf()
-							checkLeave!! += UserChatEvent(apiSource, update, sourcePeerId)
+							if (leaves == null) leaves = mutableListOf()
+							leaves!! += producer.leave(update, sourcePeerId)
 						}
+						"chat_pin_message" -> {
+							if (pinUpdaters == null) pinUpdaters = mutableListOf()
+							pinUpdaters!! += producer.pin(update, sourcePeerId)
+						}
+
+						"chat_unpin_message" -> {
+							if (unpinUpdaters == null) unpinUpdaters = mutableListOf()
+							unpinUpdaters!! += producer.unpin(update, sourcePeerId)
+						}
+
 						"chat_screenshot" -> {
 							if (screenshots == null) screenshots = mutableListOf()
-							screenshots!! += UserChatEvent(apiSource, update, sourcePeerId)
+							screenshots!! += producer.screenshot(update, sourcePeerId)
 						}
 						else -> {
-							if (checkMessages == null) checkMessages = mutableListOf()
-							checkMessages!! += UserMessage(apiSource, update, sourcePeerId)
+							if (others == null) others = mutableListOf()
+							others!! += producer.otherEvent(update, sourcePeerId)
 						}
 					}
 				} else {
-					if (checkMessages == null) checkMessages = mutableListOf()
-					checkMessages!! += UserMessage(apiSource, update, sourcePeerId)
+					if (messages == null) messages = mutableListOf()
+					messages!! += producer.message(update, sourcePeerId)
 				}
 			}
 		}
-		if (checkMessages != null)
-			processMessages(checkMessages)
-		if (checkInvites != null)
-			processInvites(checkInvites)
+		if (messages != null)
+			eventHandler.processMessages(messages)
+		if (invites != null)
+			this.eventHandler.processInvites(invites)
 		if (titleUpdaters != null)
-			processTitleUpdates(titleUpdaters)
+			eventHandler.processTitleUpdates(titleUpdaters)
 		if (pinUpdaters != null)
-			processPinUpdates(pinUpdaters)
-		if (checkLeave != null)
-			processLeaves(checkLeave)
+			this.eventHandler.processPinUpdates(pinUpdaters)
+		if (unpinUpdaters != null)
+			eventHandler.processUnpinUpdates(unpinUpdaters)
+		if (leaves != null)
+			this.eventHandler.processLeaves(leaves)
 		if (screenshots != null)
 			eventHandler.processScreenshots(screenshots)
 	}
 
-	private inner class ApiSource : UserChatEvent.ApiSource {
-
-		val messages = mutableListOf<JsonItem>()
-
-		private val map: Map<Int, JsonItem> by lazy(LazyThreadSafetyMode.NONE) {
-			val ids = messages.map { it.asInt() }
-			val result = api.messages.getById(ids)?: return@lazy emptyMap()
-			if (VkApis.isError(result))
-				return@lazy emptyMap()
-			val items = result["response"]["items"] as JsonArray
-			items.associateBy { it["id"].asInt() }
-		}
-
-		private fun getDirect(id: Int): JsonItem? {
-			val result = api.messages.getById(listOf(id))?: return null
-			if (VkApis.isError(result))
-				return null
-			val items = result["response"]["items"] as JsonArray
-			return items.firstOrNull()
-		}
-
-		override fun getFullEvent(messageId: Int): JsonItem? {
-			return map[messageId] ?: getDirect(messageId)
-		}
-
-		operator fun plusAssign(item: JsonItem) {
-			messages += item
-		}
-	}
-
 	private inline fun <E>mutableListOf() = LinkedList<E>()
 
-	fun processMessages(messages: List<Message>) {
-		this.eventHandler.processMessages(messages)
-	}
-
-	fun processEditMessages(messages: List<Message>) {
+	private fun processEditMessages(messages: List<Message>) {
 		this.eventHandler.processEditedMessages(messages)
-	}
-
-	fun processInvites(invites: List<ChatEvent>) {
-		this.eventHandler.processInvites(invites)
-	}
-
-	fun processTitleUpdates(updaters: List<TitleUpdate>) {
-		this.eventHandler.processTitleUpdates(updaters)
-	}
-
-	fun processPinUpdates(updaters: List<PinUpdate>) {
-		this.eventHandler.processPinUpdates(updaters)
-	}
-
-	fun processLeaves(users: List<ChatEvent>) {
-		this.eventHandler.processLeaves(users)
-	}
-
-	fun processCallbacks(callbacks: List<CallbackEvent>) {
-		this.eventHandler.processCallbacks(callbacks)
 	}
 }

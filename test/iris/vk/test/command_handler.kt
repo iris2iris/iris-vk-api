@@ -28,7 +28,7 @@ fun main() {
 		vk.messages.send(it.peerId, "Ваш ID равен: ${it.fromId}")
 	}
 
-	commandsHandler += CommandMatcherRegex("рандом (\\d+) (\\d+)") { vkMessage, params ->
+	commandsHandler += CommandMatcherRegex("""рандом (\d+) (\d+)""") { vkMessage, params ->
 
 		var first = params[1].toInt()
 		var second = params[2].toInt()

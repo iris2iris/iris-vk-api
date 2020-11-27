@@ -6,7 +6,7 @@ import iris.vk.event.Message
  * @created 27.10.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class CommandMatcherRegex(private val commandPattern: Regex, private val runCommand: CommandRegex): CommandMatcherWithHash {
+open class CommandMatcherRegex(private val commandPattern: Regex, private val runCommand: CommandRegex, private val charHash: CharArray? = null): CommandMatcherWithHash {
 
 	constructor(commandPattern: String, runCommand: (message: Message, params: List<String>) -> Unit) : this(Regex(commandPattern), runCommand)
 
@@ -28,6 +28,8 @@ open class CommandMatcherRegex(private val commandPattern: Regex, private val ru
 	}
 
 	override fun hashChars(): CharArray? {
+		charHash?.run { return this }
+
 		return commandPattern.pattern.firstOrNull()?.let {
 			if (it.isLetterOrDigit())
 				charArrayOf(it)

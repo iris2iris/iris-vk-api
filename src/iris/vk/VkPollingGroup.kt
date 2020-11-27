@@ -10,13 +10,13 @@ import iris.vk.api.simple.VkApi
  * @created 08.09.2019
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class VkPollingGroup(commander: VkApi, updateProcessor: VkUpdateProcessor, groupId: Int = 0): VkPollingUser(commander, updateProcessor) {
+open class VkPollingGroup(api: VkApi, updateProcessor: VkUpdateProcessor, groupId: Int = 0): VkPollingUser(api, updateProcessor) {
 
 	constructor(token: String, messageHandler: VkEventHandler, version: String? = null) : this(VkApi(token, version?: VK_API_VERSION), VkUpdateProcessorGroupDefault(messageHandler))
 
 	private val groupId =
 		if (groupId == 0) {
-			val res = commander.groups.getById(emptyList()) ?: throw IllegalStateException("Can't connect to vk.com")
+			val res = api.groups.getById(emptyList()) ?: throw IllegalStateException("Can't connect to vk.com")
 			if (VkApis.isError(res)) {
 				throw IllegalStateException(VkApis.errorString(res))
 			}

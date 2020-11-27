@@ -6,7 +6,8 @@ import iris.vk.event.Message
  * @created 04.11.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-abstract class CommandExtractorAbstract(private val prefixTester: PrefixTester, private val maxCommandLength: Int = 150) : CommandExtractor {
+open class CommandExtractorBase(private val prefixTester: PrefixTester, private val maxCommandLength: Int = 150) : CommandExtractor {
+
 	interface PrefixTester {
 		fun find(text: String): Int
 	}

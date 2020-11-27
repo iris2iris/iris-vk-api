@@ -29,6 +29,11 @@ class VkEventHandlerArray(val list: Array<VkEventHandler>) : VkEventHandler {
 			l.processPinUpdates(updaters)
 	}
 
+	override fun processUnpinUpdates(updates: List<PinUpdate>) {
+		for (l in list)
+			l.processUnpinUpdates(updates)
+	}
+
 	override fun processLeaves(leaves: List<ChatEvent>) {
 		for (l in list)
 			l.processLeaves(leaves)
@@ -47,5 +52,10 @@ class VkEventHandlerArray(val list: Array<VkEventHandler>) : VkEventHandler {
 	override fun processScreenshots(screenshots: List<ChatEvent>) {
 		for (l in list)
 			l.processScreenshots(screenshots)
+	}
+
+	override fun processOthers(others: List<OtherEvent>) {
+		for (l in list)
+			l.processOthers(others)
 	}
 }

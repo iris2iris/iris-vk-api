@@ -18,8 +18,10 @@ class VkTriggerEventHandler() : VkEventHandler {
 	interface TriggerLeave { fun process(messages: List<ChatEvent>) }
 	interface TriggerTitleUpdate { fun process(messages: List<TitleUpdate>) }
 	interface TriggerPinUpdate { fun process(messages: List<PinUpdate>) }
+	interface TriggerUnpinUpdate { fun process(messages: List<PinUpdate>) }
 	interface TriggerCallback { fun process(messages: List<CallbackEvent>) }
 	interface TriggerScreenshot { fun process(messages: List<ChatEvent>) }
+	interface TriggerOther { fun process(messages: List<OtherEvent>) }
 
 	class TriggerMessageLambda(private val processor: (messages: List<Message>) -> Unit) : TriggerMessage {
 		override fun process(messages: List<Message>) {
@@ -57,6 +59,12 @@ class VkTriggerEventHandler() : VkEventHandler {
 		}
 	}
 
+	class TriggerUnpinUpdateLambda(private val processor: (messages: List<PinUpdate>) -> Unit) : TriggerUnpinUpdate {
+		override fun process(messages: List<PinUpdate>) {
+			processor(messages)
+		}
+	}
+
 	class TriggerCallbackLambda(private val processor: (messages: List<CallbackEvent>) -> Unit) : TriggerCallback {
 		override fun process(messages: List<CallbackEvent>) {
 			processor(messages)
@@ -69,14 +77,22 @@ class VkTriggerEventHandler() : VkEventHandler {
 		}
 	}
 
+	class TriggerOtherLambda(private val processor: (messages: List<OtherEvent>) -> Unit) : TriggerOther {
+		override fun process(messages: List<OtherEvent>) {
+			processor(messages)
+		}
+	}
+
 	private var messages: MutableList<TriggerMessage>? = null
 	private var editMessages: MutableList<TriggerEditMessage>? = null
 	private var invites: MutableList<TriggerInvite>? = null
 	private var leaves: MutableList<TriggerLeave>? = null
 	private var titles: MutableList<TriggerTitleUpdate>? = null
 	private var pins: MutableList<TriggerPinUpdate>? = null
+	private var unpins: MutableList<TriggerUnpinUpdate>? = null
 	private var callbacks: MutableList<TriggerCallback>? = null
 	private var screenshots: MutableList<TriggerScreenshot>? = null
+	private var others: MutableList<TriggerOther>? = null
 
 	operator fun plusAssign(trigger: TriggerMessage) {
 		if (messages == null) messages = mutableListOf()
@@ -108,6 +124,11 @@ class VkTriggerEventHandler() : VkEventHandler {
 		pins!! += trigger
 	}
 
+	operator fun plusAssign(trigger: TriggerUnpinUpdate) {
+		if (unpins == null) unpins = mutableListOf()
+		unpins!! += trigger
+	}
+
 	operator fun plusAssign(trigger: TriggerCallback) {
 		if (callbacks == null) callbacks = mutableListOf()
 		callbacks!! += trigger
@@ -118,16 +139,22 @@ class VkTriggerEventHandler() : VkEventHandler {
 		screenshots!! += trigger
 	}
 
-	//fun onMessage(processor: (messages: List<Message>) -> Unit) = plusAssign(TriggerMessageLambda(processor))
+	operator fun plusAssign(trigger: TriggerOther) {
+		if (others == null) others = mutableListOf()
+		others!! += trigger
+	}
+
 	fun onMessage(processor: (messages: List<Message>) -> Unit) = plusAssign(TriggerMessageLambda(processor))
 	fun onMessage(trigger: TriggerMessage) = plusAssign(trigger)
-	//fun onMessage(block: VkEventHandlerTrigger.() -> TriggerMessage) = plusAssign(block())
 	fun onMessageEdit(processor: (messages: List<Message>) -> Unit) = plusAssign(TriggerMessageEditLambda(processor))
 	fun onInvite(processor: (messages: List<ChatEvent>) -> Unit) = plusAssign(TriggerInviteLambda(processor))
 	fun onLeave(processor: (messages: List<ChatEvent>) -> Unit) = plusAssign(TriggerLeaveLambda(processor))
 	fun onTitleUpdate(processor: (messages: List<TitleUpdate>) -> Unit) = plusAssign(TriggerTitleUpdateLambda(processor))
 	fun onPinUpdate(processor: (messages: List<PinUpdate>) -> Unit) = plusAssign(TriggerPinUpdateLambda(processor))
+	fun onUnpinUpdate(processor: (messages: List<PinUpdate>) -> Unit) = plusAssign(TriggerUnpinUpdateLambda(processor))
 	fun onCallback(processor: (messages: List<CallbackEvent>) -> Unit) = plusAssign(TriggerCallbackLambda(processor))
+	fun onScreenshot(processor: (messages: List<ChatEvent>) -> Unit) = plusAssign(TriggerScreenshotLambda(processor))
+	fun onOther(processor: (messages: List<OtherEvent>) -> Unit) = plusAssign(TriggerOtherLambda(processor))
 
 	override fun processMessages(messages: List<Message>) {
 		this.messages?.forEach { it.process(messages) }
@@ -153,11 +180,19 @@ class VkTriggerEventHandler() : VkEventHandler {
 		this.pins?.forEach { it.process(updaters) }
 	}
 
+	override fun processUnpinUpdates(updates: List<PinUpdate>) {
+		this.unpins?.forEach { it.process(updates) }
+	}
+
 	override fun processCallbacks(callbacks: List<CallbackEvent>) {
 		this.callbacks?.forEach { it.process(callbacks) }
 	}
 
 	override fun processScreenshots(screenshots: List<ChatEvent>) {
 		this.screenshots?.forEach { it.process(screenshots) }
+	}
+
+	override fun processOthers(others: List<OtherEvent>) {
+		this.others?.forEach { it.process(others) }
 	}
 }
