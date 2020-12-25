@@ -1,7 +1,6 @@
 package iris.vk
 
 import iris.vk.event.*
-import java.util.*
 
 /**
  * @created 08.09.2019

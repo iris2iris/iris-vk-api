@@ -2,7 +2,6 @@ package iris.vk.callback
 
 import iris.json.JsonItem
 import iris.vk.VkRetrievable
-import java.util.*
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.logging.Logger
 

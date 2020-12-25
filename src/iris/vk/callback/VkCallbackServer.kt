@@ -5,7 +5,9 @@ import com.sun.net.httpserver.HttpHandler
 import com.sun.net.httpserver.HttpServer
 import iris.json.JsonItem
 import iris.json.flow.JsonFlowParser
+import iris.vk.callback.VkCallbackServer.Server.Request
 import java.net.InetSocketAddress
+import java.net.URI
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.logging.Logger
@@ -19,18 +21,32 @@ import java.util.logging.Logger
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
 
-open class VkCallbackServer (
-
+open class VkCallbackServer(
+		private val server: Server,
 		private val gbSource: GroupbotSource,
-		private val addressTester: AddressTester? = null,
-		private val port: Int = 80,
-		private val path: String = "/callback",
-		private val requestsExecutor: Executor = Executors.newFixedThreadPool(4),
+		path: String = "/callback",
+		private val addressTester: AddressTester? = VkAddressTesterDefault(),
 		private var eventWriter: VkCallbackEventWriter? = null,
 		expireEventTime: Long = 25_000L,
 		vkTimeVsLocalTimeDiff: Long = 0L
+)  {
 
-) {
+	constructor(
+		gbSource: GroupbotSource,
+		addressTester: AddressTester? = VkAddressTesterDefault(),
+		port: Int = 80,
+		path: String = "/callback",
+		requestsExecutor: Executor = Executors.newFixedThreadPool(4),
+		eventWriter: VkCallbackEventWriter? = null,
+		expireEventTime: Long = 25_000L,
+		vkTimeVsLocalTimeDiff: Long = 0L
+	) : this(initDefaultServer(port, requestsExecutor), gbSource, path, addressTester, eventWriter, expireEventTime, vkTimeVsLocalTimeDiff)
+
+	private val expireEventTime = expireEventTime - vkTimeVsLocalTimeDiff
+
+	init {
+		this.server.setHandler(path, CallbackHandler())
+	}
 
 	interface VkCallbackEventWriter {
 		fun send(event: JsonItem)
@@ -49,7 +65,7 @@ open class VkCallbackServer (
 		/**
 		 * Проверяет подлинность источника.
 		 */
-		fun isGoodHost(request: HttpExchange): Boolean
+		fun isGoodHost(request: Request): Boolean
 
 		/**
 		 * Должен вернуть IP адрес реального источника. Если запрос происходит от источника через прокси,например, Cloudflare
@@ -57,7 +73,41 @@ open class VkCallbackServer (
 		 *
 		 * Вызывается исключительно для логгирования неизвестных IP адресов
 		 */
-		fun getRealHost(request: HttpExchange): String
+		fun getRealHost(request: Request): String
+	}
+
+	/**
+	 * Можно взаимодействовать с любой реализацией сервера входящих запросов через данный интерфейс
+	 * в метод `setHandler` передаётся обработчик запросов по указанному URI
+	 * Данный сервер должен вызывать метод `Handler.handle(request: Request)` каждый раз, как получает входящий запрос
+	 * @see DefaultServer — базовая реализация сервера входящих запросов
+	 */
+	interface Server {
+
+		fun setHandler(path: String, handler: Handler)
+		fun start()
+		fun stop(seconds: Int)
+
+		interface Request {
+			/**
+			 * Необходимо для запроса
+			 */
+			fun findHeader(key: String): String?
+			val requestUri: URI
+			val remoteAddress: InetSocketAddress
+
+			fun writeResponse(response: String, code: Int = 200)
+
+			/**
+			 * Текст входящего запроса
+			 */
+			fun body(): String
+
+		}
+
+		interface Handler {
+			fun handle(request: Request)
+		}
 	}
 
 	interface GroupbotSource {
@@ -76,7 +126,7 @@ open class VkCallbackServer (
 		 *
 		 * Выполняется в случае `isGetByRequest() == true`
 		 */
-		fun getGroupbot(request: HttpExchange): Groupbot?
+		fun getGroupbot(request: Request): Groupbot?
 
 		/**
 		 * Извлекает информацию о группе по её ID.
@@ -89,7 +139,7 @@ open class VkCallbackServer (
 
 		class SimpleGroupSource(private val gb: Groupbot) : GroupbotSource {
 			override fun isGetByRequest() = false
-			override fun getGroupbot(request: HttpExchange) = gb
+			override fun getGroupbot(request: Request) = gb
 			override fun getGroupbot(groupId: Int) = gb
 		}
 	}
@@ -98,47 +148,94 @@ open class VkCallbackServer (
 		var loggingExpired = true
 
 		private val logger = Logger.getLogger("iris.vk")
+
+		private fun initDefaultServer(port: Int, requestsExecutor: Executor): Server {
+			val server = HttpServer.create()
+			server.bind(InetSocketAddress(port), 0)
+			server.executor = requestsExecutor
+			return DefaultServer(server)
+		}
 	}
 
-	private val expireEventTime = expireEventTime - vkTimeVsLocalTimeDiff
+	/**
+	 * Обёртка для HttpServer и обработки входящих запросов
+	 */
+	private class DefaultServer(private val server: HttpServer): HttpHandler, Server {
 
-	private var server: HttpServer? = null
+		private class DefaultRequest(private val request: HttpExchange) : Request {
+
+			override val requestUri: URI = request.requestURI
+
+			override val remoteAddress: InetSocketAddress = request.remoteAddress
+
+			override fun findHeader(key: String): String? {
+				return request.requestHeaders.getFirst(key)
+			}
+
+			override fun writeResponse(response: String, code: Int) {
+				writeResponsePrivate(request, response, code)
+			}
+
+			override fun body(): String {
+				return request.requestBody.reader().use { it.readText() }
+			}
+
+			private fun writeResponsePrivate(request: HttpExchange, str: String, rCode: Int = 200) {
+				val bytes = str.toByteArray()
+				request.sendResponseHeaders(rCode, bytes.size.toLong())
+				request.responseBody.use { it.write(bytes) }
+				request.close()
+			}
+		}
+
+		private lateinit var handler: Server.Handler
+
+		override fun setHandler(path: String, handler: Server.Handler) {
+			this.handler = handler
+			server.createContext(path, this)
+		}
+
+		override fun handle(exchange: HttpExchange) {
+			handler.handle(DefaultRequest(exchange))
+		}
+
+		override fun start() {
+			server.start()
+		}
+
+		override fun stop(seconds: Int) {
+			server.stop(seconds)
+		}
+	}
 
 	fun start() {
-		if (this.server != null)
-			throw IllegalStateException("Server already started")
-		val server = HttpServer.create()
-		this.server = server
-		server.bind(InetSocketAddress(port), 0)
-
-		server.executor = requestsExecutor
-		server.createContext(path, CallbackHandler())
 		server.start()
-		logger.fine {"CALLBACK SERVER STARTED. PORT: $port" }
 	}
 
 	fun stop() {
-		val server = this.server ?: return
 		server.stop(5)
-		this.server = null
 	}
 
 	fun setEventWriter(eventWriter: VkCallbackEventWriter) {
 		this.eventWriter = eventWriter
 	}
 
-	private inner class CallbackHandler : HttpHandler {
+	private inner class CallbackHandler : Server.Handler {
 
 		private var expired = 0
 		private val exp = Any()
 
-		override fun handle(request: HttpExchange) {
+		private inline fun ok(request: Request) {
+			request.writeResponse("ok", 200)
+		}
+
+		override fun handle(request: Request) {
 			logger.finest {"Callback API event from " + request.remoteAddress }
 
 			if (addressTester != null) {
 				if (!addressTester.isGoodHost(request)) {
 					logger.info { "Unknown host trying to send Callback API event: " + addressTester.getRealHost(request) }
-					writeResponse(request, "ok")
+					ok(request)
 					return
 				}
 			}
@@ -146,20 +243,20 @@ open class VkCallbackServer (
 			var groupbot = if (gbSource.isGetByRequest()) {
 				val groupbot = gbSource.getGroupbot(request)
 				if (groupbot == null) {
-					logger.info { "Groupbot not found. " + request.requestURI }
-					writeResponse(request, "ok")
+					logger.info { "Groupbot not found. " + request.requestUri }
+					ok(request)
 					return
 				}
 				groupbot
 			} else
 				null // значит информацию о группе возьмём позже из JSON ответа в поле group_id
 
-			val body = getBody(request)
+			val body = request.body()
 
 			try {
 				if (body.isEmpty()) {
 					logger.fine {"Body was empty" }
-					writeResponse(request, "ok")
+					ok(request)
 					return
 				}
 
@@ -169,15 +266,15 @@ open class VkCallbackServer (
 				if (groupbot == null) {
 					groupbot = gbSource.getGroupbot(groupId)
 					if (groupbot == null) {
-						logger.info { "Groupbot not found. " + request.requestURI }
-						writeResponse(request, "ok")
+						logger.info { "Groupbot not found. " + request.requestUri }
+						ok(request)
 						return
 					}
 
 				} else { // groupbot был получен из информации запроса (URI/query), поэтому нужно дополнительно проверить, совпадают ли данные группы
 					if (groupId != groupbot.id) {
 						logger.info { "Group ID from code is not identical with response object: obj=" + groupId + " vs gb=" + groupbot.id }
-						writeResponse(request, "ok")
+						ok(request)
 						return
 					}
 				}
@@ -186,11 +283,11 @@ open class VkCallbackServer (
 				if (type == "confirmation") {
 					val res = groupbot.confirmation
 					logger.finest {"Test confirmation. Group ID: $groupId" }
-					writeResponse(request, res)
+					request.writeResponse(res, 200)
 					return
 				}
 
-				writeResponse(request, "ok")
+				ok(request)
 				val eventWriter = eventWriter ?: return
 
 				if (groupbot.secret != null && groupbot.secret != event["secret"].asStringOrNull()) {
@@ -252,22 +349,8 @@ open class VkCallbackServer (
 				}
 			} catch (e: Exception) {
 				logger.severe { e.stackTraceToString() }
-				writeResponse(request, "ok")
+				ok(request)
 			}
-
-		}
-
-		private fun writeResponse(request: HttpExchange, str: String, rCode: Int = 200) {
-			val bytes = str.toByteArray()
-			request.sendResponseHeaders(rCode, bytes.size.toLong())
-			request.responseBody.use { it.write(bytes) }
-			request.close()
-		}
-
-		private fun getBody(request: HttpExchange): String {
-			return request.requestBody.reader().use { it.readText() }
 		}
 	}
-
-
 }

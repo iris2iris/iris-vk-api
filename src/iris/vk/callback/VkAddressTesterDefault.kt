@@ -1,6 +1,5 @@
 package iris.vk.callback
 
-import com.sun.net.httpserver.HttpExchange
 import iris.vk.callback.VkCallbackServer.AddressTester
 import java.math.BigInteger
 import java.net.InetAddress
@@ -22,11 +21,11 @@ class VkAddressTesterDefault(
 
 	private val ipSubnets = ipSubnets.map { Subnet.getInstance(it) }
 
-	override fun getRealHost(request: HttpExchange): String {
+	override fun getRealHost(request: VkCallbackServer.Server.Request): String {
 		return getRealHostInternal(request) ?: request.remoteAddress.address.hostAddress
 	}
 
-	override fun isGoodHost(request: HttpExchange): Boolean {
+	override fun isGoodHost(request: VkCallbackServer.Server.Request): Boolean {
 		val address = (if (realIpHeader == null) {
 			request.remoteAddress.address
 		} else { // нужно вытащить реальный IP адрес
@@ -40,9 +39,9 @@ class VkAddressTesterDefault(
 		return ipSubnets.any { it.isInNet(address) }
 	}
 
-	private fun getRealHostInternal(request: HttpExchange): String? {
+	private fun getRealHostInternal(request: VkCallbackServer.Server.Request): String? {
 		if (realIpHeader == null) return null
-		val fwd = request.requestHeaders.getFirst(realIpHeader)
+		val fwd = request.findHeader(realIpHeader)
 		return fwd ?: request.remoteAddress.address.hostAddress
 	}
 

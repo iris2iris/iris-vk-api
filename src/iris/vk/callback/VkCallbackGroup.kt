@@ -1,6 +1,9 @@
 package iris.vk.callback
 
-import iris.vk.*
+import iris.vk.VkEventHandler
+import iris.vk.VkRetrievable
+import iris.vk.VkUpdateProcessor
+import iris.vk.VkUpdateProcessorGroupDefault
 
 /**
  * @created 02.11.2020

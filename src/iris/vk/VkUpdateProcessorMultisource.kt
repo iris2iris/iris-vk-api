@@ -1,7 +1,6 @@
 package iris.vk
 
 import iris.json.JsonItem
-import iris.vk.VkUpdateProcessor
 
 /**
  * @created 02.11.2020
