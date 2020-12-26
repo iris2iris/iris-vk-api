@@ -1,44 +1,25 @@
 package iris.vk.callback
 
-import iris.vk.VkEventHandler
-import iris.vk.VkRetrievable
 import iris.vk.VkUpdateProcessor
-import iris.vk.VkUpdateProcessorGroupDefault
 
 /**
  * @created 02.11.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-open class VkCallbackGroup(
-		private val callbackServer: VkCallbackServer,
-		private val updateProcessor: VkUpdateProcessor,
-		private val retriever: VkRetrievable = createQueue(callbackServer, 1000)
+class VkCallbackGroup(
+		private val server: VkCallbackRequestServer,
+		private val buffer: VkCallbackReadWriteBuffer,
+		private val updateProcessor: VkUpdateProcessor
 ) : Runnable {
 
-	constructor(callbackServer: VkCallbackServer, messageHandler: VkEventHandler, queueSize: Int = 1000)
-			: this(callbackServer, defaultUpdateProcessor(messageHandler), createQueue(callbackServer, queueSize))
-
-	companion object {
-
-		fun defaultUpdateProcessor(messageHandler: VkEventHandler): VkUpdateProcessor {
-			return VkUpdateProcessorGroupDefault(messageHandler)
-		}
-
-		private fun createQueue(callbackServer: VkCallbackServer, queueSize: Int): VkRetrievable {
-			val queue = VkCallbackEventReaderWriterDefault(queueSize)
-			callbackServer.setEventWriter(queue)
-			return queue
-		}
-	}
-
-	protected var working = true
+	private var working = true
 
 	override fun run() {
+		server.start()
 		working = true
-		callbackServer.start()
-		val thisThread = Thread.currentThread()
+		val thisThread = thread ?: Thread.currentThread()
 		while (!thisThread.isInterrupted && working) {
-			val items = retriever.retrieve()
+			val items = buffer.retrieve()
 			if (items.isEmpty()) continue
 			updateProcessor.processUpdates(items)
 		}
@@ -47,13 +28,12 @@ open class VkCallbackGroup(
 	private var thread: Thread? = null
 
 	fun startPolling() {
-		thread = Thread(this)
-		thread!!.start()
+		thread = Thread(this).also { it.start() }
 	}
 
 	fun stop() {
+		server.stop(5)
 		working = false
 		thread?.interrupt()
-		callbackServer.stop()
 	}
 }

@@ -1,8 +1,8 @@
 package iris.vk
 
-import iris.vk.callback.VkCallbackServer
-import iris.vk.callback.VkCallbackServer.GroupbotSource
-import iris.vk.callback.VkCallbackServer.GroupbotSource.Groupbot
+import iris.vk.callback.GroupbotSource
+import iris.vk.callback.GroupbotSource.Groupbot
+import iris.vk.callback.VkCallbackRequestHandler
 
 /**
  * @created 29.09.2020
@@ -14,7 +14,7 @@ class VkGroupSourceList(groups: List<Groupbot>) : GroupbotSource {
 
 	override fun isGetByRequest() = false
 
-	override fun getGroupbot(request: VkCallbackServer.Server.Request): Groupbot? = null
+	override fun getGroupbot(request: VkCallbackRequestHandler.Request): Groupbot? = null
 
 	override fun getGroupbot(groupId: Int): Groupbot? {
 		return groups[groupId]

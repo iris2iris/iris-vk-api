@@ -1,7 +1,6 @@
 package iris.vk.callback
 
 import iris.json.JsonItem
-import iris.vk.VkRetrievable
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.logging.Logger
 
@@ -9,7 +8,7 @@ import java.util.logging.Logger
  * @created 02.11.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class VkCallbackEventReaderWriterDefault(queueSize: Int) : VkCallbackServer.VkCallbackEventWriter, VkRetrievable {
+class VkCallbackReadWriteBufferDefault(queueSize: Int) : VkCallbackReadWriteBuffer {
 
 	private val queue: ArrayBlockingQueue<JsonItem> = ArrayBlockingQueue(queueSize)
 	private val queueWait = Object()

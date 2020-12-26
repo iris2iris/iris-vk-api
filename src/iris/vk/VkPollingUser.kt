@@ -38,7 +38,7 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 
 	override fun run() {
 		isWorking = true
-		val thisThread = Thread.currentThread()
+		val thisThread = thread ?: Thread.currentThread()
 		while (!thisThread.isInterrupted && isWorking) {
 			try {
 				runInternal()
@@ -66,7 +66,7 @@ open class VkPollingUser(protected val vkApi: VkApi, protected val updateProcess
 			return
 		}
 
-		logger.fine("Server received. Starting listening")
+		logger.fine("VkCallbackRequestServer received. Starting listening")
 
 		var lastTs = longPoll["response"]["ts"].asString()
 		val accessMode = (2 + 8).toString()

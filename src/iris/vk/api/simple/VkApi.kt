@@ -15,10 +15,10 @@ import kotlin.LazyThreadSafetyMode.NONE
 
 open class VkApi(val token: String, val version: String = VK_API_VERSION, internal val connection: VkApiConnection = VkApiConnectionHttpClient()) : VkApiInterface<JsonItem?, List<JsonItem?>>, Requester<JsonItem?, List<JsonItem?>> {
 
-	override val messages by lazy(NONE) { Messages(this) }
+	override val messages = Messages(this)
 	override val friends by lazy(NONE) { Friends(this) }
 	override val groups by lazy(NONE) { Groups(this) }
-	override val users by lazy(NONE) { Users(this) }
+	override val users = Users(this)
 	override val photos by lazy(NONE) { PhotosSimple(this) }
 	override val docs by lazy(NONE) { DocsSimple(this) }
 	override val wall by lazy(NONE) { Wall(this) }

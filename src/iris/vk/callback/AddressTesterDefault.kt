@@ -1,6 +1,6 @@
 package iris.vk.callback
 
-import iris.vk.callback.VkCallbackServer.AddressTester
+import iris.vk.callback.VkCallbackRequestHandler.Request
 import java.math.BigInteger
 import java.net.InetAddress
 
@@ -14,18 +14,18 @@ import java.net.InetAddress
  * @created 29.09.2020
  * @author [Ivan Ivanov](https://vk.com/irisism)
  */
-class VkAddressTesterDefault(
+class AddressTesterDefault(
 	ipSubnets: Array<String> = arrayOf("95.142.192.0/21", "2a00:bdc0::/32"),
 	private val realIpHeader: String? = null
 ) : AddressTester {
 
 	private val ipSubnets = ipSubnets.map { Subnet.getInstance(it) }
 
-	override fun getRealHost(request: VkCallbackServer.Server.Request): String {
+	override fun getRealHost(request: Request): String {
 		return getRealHostInternal(request) ?: request.remoteAddress.address.hostAddress
 	}
 
-	override fun isGoodHost(request: VkCallbackServer.Server.Request): Boolean {
+	override fun isGoodHost(request: Request): Boolean {
 		val address = (if (realIpHeader == null) {
 			request.remoteAddress.address
 		} else { // нужно вытащить реальный IP адрес
@@ -39,7 +39,7 @@ class VkAddressTesterDefault(
 		return ipSubnets.any { it.isInNet(address) }
 	}
 
-	private fun getRealHostInternal(request: VkCallbackServer.Server.Request): String? {
+	private fun getRealHostInternal(request: Request): String? {
 		if (realIpHeader == null) return null
 		val fwd = request.findHeader(realIpHeader)
 		return fwd ?: request.remoteAddress.address.hostAddress

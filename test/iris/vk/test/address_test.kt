@@ -1,10 +1,10 @@
 package iris.vk.test
 
 import iris.json.JsonItem
-import iris.vk.callback.VkAddressTesterDefault
-import iris.vk.callback.VkCallbackServer
-import iris.vk.callback.VkCallbackServer.GroupbotSource.Groupbot
-import iris.vk.callback.VkCallbackServer.GroupbotSource.SimpleGroupSource
+import iris.vk.VkUpdateProcessor
+import iris.vk.callback.AddressTesterDefault
+import iris.vk.callback.VkCallbackGroupBuilder
+import iris.vk.callback.GroupbotSource.Groupbot
 import java.util.logging.Logger
 
 /**
@@ -19,23 +19,25 @@ fun main() {
 	val confirmation = props.getProperty("group.confirmation")
 	val groupId = props.getProperty("group.id").toInt()
 
-	val addressTester = VkAddressTesterDefault(
+	val addressTester = AddressTesterDefault(
 		ipSubnets = arrayOf("95.142.192.0/21", "2a00:bdc0::/32")
 	)
 
-	val cbEngine = VkCallbackServer(
-			gbSource = SimpleGroupSource(Groupbot(groupId, confirmation, secret))
-			, path = "/kotlin/callback"
-			, addressTester = addressTester
-	)
-
-	cbEngine.setEventWriter(
-		object : VkCallbackServer.VkCallbackEventWriter {
-			override fun send(event: JsonItem) {
-				println("Новое событие:" + event.obj())
+	val updateProcessor = object : VkUpdateProcessor {
+		override fun processUpdates(updates: List<JsonItem>) {
+			updates.forEach {
+				println("Новое событие:" + it.obj())
 			}
 		}
-	)
+	}
 
-	cbEngine.start() // Запускаем сервер. Открываем порт для входящих. Неблокирующий вызов
+	val groupCb = VkCallbackGroupBuilder.build {
+		groupbot = Groupbot(groupId, confirmation, secret)
+		this.addressTester = addressTester
+		path = "/kotlin/callback"
+		this.updateProcessor = updateProcessor
+	}
+
+
+	groupCb.startPolling() // Запускаем сервер. Открываем порт для входящих. Неблокирующий вызов */
 }

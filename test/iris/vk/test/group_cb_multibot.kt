@@ -1,14 +1,11 @@
 package iris.vk.test
 
-import iris.json.JsonItem
 import iris.vk.VkEventHandlerAdapter
-import iris.vk.callback.VkAddressTesterDefault
-import iris.vk.callback.VkCallbackServer
-import iris.vk.callback.VkCallbackServer.GroupbotSource.Groupbot
+import iris.vk.callback.AddressTesterDefault
+import iris.vk.callback.GroupbotSource.Groupbot
 import iris.vk.VkGroupSourceList
 import iris.vk.api.future.VkApiPack
-import iris.vk.api.simple.VkApi
-import iris.vk.callback.VkCallbackGroup
+import iris.vk.callback.VkCallbackGroupBuilder
 import iris.vk.event.Message
 
 /**
@@ -31,13 +28,6 @@ fun main() {
 
 	val api = VkApiPack(token)
 
-	val cbEngine = VkCallbackServer(
-			gbSource = groupSource,
-			path = "/kotlin/callback",
-			addressTester = VkAddressTesterDefault(),
-			vkTimeVsLocalTimeDiff = api.utils.getServerTime().get()!!["response"].asLong()*1000L - System.currentTimeMillis()
-	)
-
 	val messageHandler = object : VkEventHandlerAdapter() {
 		override fun processMessage(message: Message) {
 			println("Событие получено. Group ID: ${message.sourcePeerId} текст: ${message.text}")
@@ -46,6 +36,13 @@ fun main() {
 		}
 	}
 
-	val listener = VkCallbackGroup(cbEngine, VkCallbackGroup.defaultUpdateProcessor(messageHandler))
-	listener.run()
+	val groupCb = VkCallbackGroupBuilder.build {
+		this.groupbotSource = groupSource
+		path = "/kotlin/callback"
+		addressTester = AddressTesterDefault()
+		vkTimeVsLocalTimeDiff = api.utils.getServerTime().get()!!["response"].asLong() * 1000L - System.currentTimeMillis()
+		eventHandler = messageHandler
+	}
+
+	groupCb.run()
 }
