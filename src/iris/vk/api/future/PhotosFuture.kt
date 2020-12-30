@@ -1,6 +1,6 @@
 package iris.vk.api.future
 
-import iris.json.plain.IrisJsonParser
+import iris.json.plain.JsonPlainParser
 import iris.vk.Options
 import iris.vk.api.VkApis.isError
 import iris.vk.api.common.Photos
@@ -88,7 +88,7 @@ open class PhotosFuture(override val api: VkApiFuture) : Photos<VkFuture, VkFutu
 				return@thenApply uploadServerInfo
 			val responseText = api.connection.requestUpload(uploadServerInfo["response"]["upload_url"].asString(), mapOf("photo" to Options("file" to photoPath))).get()
 			val response = responseText?.responseText ?: return@thenApply null
-			val responseImage = IrisJsonParser(response).parse().asMap()
+			val responseImage = JsonPlainParser.parse(response).asMap()
 			saveMessagesPhotoByObject(Options(responseImage), token).get()
 		}.whenComplete {t, e ->
 			future.complete(t)
@@ -103,7 +103,7 @@ open class PhotosFuture(override val api: VkApiFuture) : Photos<VkFuture, VkFutu
 				return@thenApply uploadServerInfo
 			val responseText = api.connection.requestUpload(uploadServerInfo["response"]["upload_url"].asString(), mapOf("photo" to Options("data" to data, "Content-Type" to "image/$type", "filename" to "item.$type"))).get()
 			val response = responseText?.responseText ?: return@thenApply null
-			val responseImage = IrisJsonParser(response).parse().asMap()
+			val responseImage = JsonPlainParser.parse(response).asMap()
 			saveMessagesPhotoByObject(Options(responseImage), token).get()
 		}.whenComplete {t, e ->
 			future.complete(t)

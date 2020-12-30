@@ -1,9 +1,6 @@
 package iris.vk.event.user
 
-import iris.json.JsonArray
-import iris.json.JsonEntry
-import iris.json.JsonItem
-import iris.json.JsonObject
+import iris.json.*
 import iris.json.flow.JsonFlowParser
 import iris.json.plain.IrisJsonArray
 import iris.json.plain.IrisJsonObject
@@ -44,7 +41,7 @@ open class UserMessage(fullItemSource: ApiSource, source: JsonItem, sourcePeerId
 					val addKey = if (data.size > 1) data[1] else "id"
 					attachments[num][addKey] = addValue
 				}
-				IrisJsonArray(attachments.map { IrisJsonObject(it.toList()) })
+				IrisJsonArray(attachments.map { IrisJsonObject(it.toList(), Configuration.globalConfiguration) })
 			} else {
 				JsonFlowParser.start(attachmentsFull.asString()) as JsonArray
 			}).getList() as Collection<JsonObject>
@@ -56,7 +53,7 @@ open class UserMessage(fullItemSource: ApiSource, source: JsonItem, sourcePeerId
 					var type: String? = null
 					if (!entries.removeIf { if (it.first == "type") {type = it.second.asString(); true} else false }) continue
 					if (type != null) {
-						resAttachments.add(IrisJsonObject(listOf("type" to JsonProxyString(type), type!! to a)))
+						resAttachments.add(IrisJsonObject(listOf("type" to JsonProxyString(type), type!! to a), Configuration.globalConfiguration))
 					}
 				}
 				return@lazy resAttachments

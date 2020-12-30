@@ -1,5 +1,6 @@
 package iris.vk.api
 
+import iris.json.Configuration
 import iris.json.JsonArray
 import iris.json.JsonEncoder
 import iris.json.JsonItem
@@ -79,13 +80,13 @@ object VkApis {
 		for (i in data["response"].iterable()) {
 			if (i.isPrimitive() && i.asBooleanOrNull() == false) {
 				val errorInfo = executeErrors[numError]
-				result.add(IrisJsonObject("error" to errorInfo))
+				result.add(IrisJsonObject(listOf("error" to errorInfo), Configuration.globalConfiguration))
 				numError++
 			} else if (i.isArray()) {
 				val items = i.asList()
-				result.add(IrisJsonObject("response" to JsonProxyObject("count" to items.size, "items" to items)))
+				result.add(IrisJsonObject(listOf("response" to JsonProxyObject("count" to items.size, "items" to items)), Configuration.globalConfiguration))
 			} else {
-				result.add(IrisJsonObject("response" to i))
+				result.add(IrisJsonObject(listOf("response" to i), Configuration.globalConfiguration))
 			}
 		}
 		return result

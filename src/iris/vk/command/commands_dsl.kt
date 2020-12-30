@@ -10,9 +10,41 @@ fun commands(initializer: DslCommandBuilder.() -> Unit): List<CommandMatcherWith
 	return DslCommandBuilder().apply(initializer).build()
 }
 
-open class DslCommandBuilder {
+class DslCommandBuilder {
 
 	private val commands = mutableListOf<CommandMatcherWithHash>()
+
+	fun add(pattern: String, command: (message: Message) -> Unit) {
+		commands += CommandMatcherSimple(pattern, command)
+	}
+
+	fun add(pattern: String, command: Command) {
+		commands += CommandMatcherSimple(pattern, command)
+	}
+
+	fun add(pattern: Regex, command: (message: Message, params: List<String>) -> Unit) {
+		commands += CommandMatcherRegex(pattern, command)
+	}
+
+	fun add(pattern: Regex, command: CommandMatcherRegex.CommandRegex) {
+		commands += CommandMatcherRegex(pattern, command)
+	}
+
+	fun add(command: CommandMatcherWithHash) {
+		commands += command
+	}
+
+	fun addList(commandsList: List<CommandMatcherWithHash>) {
+		commands += commandsList
+	}
+
+	operator fun plusAssign(command: CommandMatcherWithHash) {
+		commands += command
+	}
+
+	operator fun plusAssign(commandsList: List<CommandMatcherWithHash>) {
+		commands += commandsList
+	}
 
 	infix fun String.runs(command: (message: Message) -> Unit) {
 		commands += CommandMatcherSimple(this, command)
@@ -29,7 +61,7 @@ open class DslCommandBuilder {
 	}
 
 	fun list(vararg commands: String): List<String> {
-		return listOf(*commands)
+		return commands.asList()
 	}
 
 	infix fun Collection<String>.runs(command: (message: Message) -> Unit) {

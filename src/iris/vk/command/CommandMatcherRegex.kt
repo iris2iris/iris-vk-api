@@ -8,6 +8,8 @@ import iris.vk.event.Message
  */
 open class CommandMatcherRegex(private val commandPattern: Regex, private val runCommand: CommandRegex, private val charHash: CharArray? = null): CommandMatcherWithHash {
 
+	constructor(commandPattern: String, runCommand: CommandRegex, charHash: CharArray? = null) : this(Regex(commandPattern), runCommand, charHash)
+
 	constructor(commandPattern: String, runCommand: (message: Message, params: List<String>) -> Unit) : this(Regex(commandPattern), runCommand)
 
 	constructor(commandPattern: Regex, runCommand: (message: Message, params: List<String>) -> Unit) : this(commandPattern, object : CommandRegex {
